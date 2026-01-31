@@ -63,14 +63,14 @@ resource "azurerm_subnet" "AzureFWSubnet" {
 resource "azurerm_subnet" "App_subnet" {
   name = "app_subnet"
   resource_group_name = azurerm_resource_group.hub_rg.name
-  virtual_network_name = azurerm_virtual_network.spoke1-vnet
+  virtual_network_name = azurerm_virtual_network.spoke1-vnet.name
   address_prefixes = var.APP_Subnet
   
 }
 resource "azurerm_subnet" "DB_subnet" {
   name = "db_subnet"
   resource_group_name = azurerm_resource_group.hub_rg.name
-  virtual_network_name = azurerm_virtual_network.spoke1-vnet
+  virtual_network_name = azurerm_virtual_network.spoke1-vnet.name
   address_prefixes = var.DB_Subnet
   
 }
