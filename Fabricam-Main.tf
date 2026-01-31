@@ -32,20 +32,7 @@ resource "azurerm_virtual_network" "spoke1-vnet" {
   resource_group_name = azurerm_resource_group.Prod_rg
   location = var.location_hub
   address_space = var.vnet_spoke1_address_space
-  subnet{
-    
-    name = "App_Subnet"
-    address_prefixes = var.APP_Subnet
-
-  }
   
-  subnet{
-    
-    name = "DB_Subnet"
-    address_prefixes = var.DB_Subnet
-
-  }
-
 
 
   
