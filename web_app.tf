@@ -43,7 +43,7 @@ resource "azurerm_private_endpoint" "Sql-ep" {
     name = "${var.project}-sql-ep"
   resource_group_name = azurerm_resource_group.Prod_rg.name
   location = azurerm_resource_group.Prod_rg.location
-  subnet_id = azurerm_subnet.DB_subnet
+  subnet_id = azurerm_subnet.DB_subnet.id
 
     private_service_connection {
     name = "${var.project}-sql-privlink"
