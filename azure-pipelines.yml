@@ -39,4 +39,5 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'plan'
-        environmentServiceArm: 'Fabrikam-Manual-SP'
+        environmentServiceNameAzureRM: '$(serviceConnection)'
+
