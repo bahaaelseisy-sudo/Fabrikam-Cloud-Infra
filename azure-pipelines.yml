@@ -39,4 +39,4 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'plan'
-        environmentServiceArm: '$(serviceConnection)'
+        environmentServiceArm: 'Fabrikam-Manual-SP'
