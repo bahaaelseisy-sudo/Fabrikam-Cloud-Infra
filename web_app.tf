@@ -20,7 +20,7 @@ resource "azurerm_linux_web_app" "web_app" {
 }
 
   
-resource "azurerm_sql_server" "web_DB_server" {
+resource azurerm_sql_server"web_DB_server" {
     name = "${var.project}-sqlserver"
   resource_group_name = azurerm_resource_group.Prod_rg
   location = azurerm_resource_group.Prod_rg.location
@@ -43,7 +43,7 @@ resource "azurerm_private_endpoint" "Sql-ep" {
     name = "${var.project}-sql-ep"
   resource_group_name = azurerm_resource_group.Prod_rg.name
   location = azurerm_resource_group.Prod_rg.location
-  subnet_id = azurerm_virtual_network.spoke1-vnet.subnet.DB_Subnet
+  subnet_id = azurerm_subnet.DB_subnet
 
     private_service_connection {
     name = "${var.project}-sql-privlink"
