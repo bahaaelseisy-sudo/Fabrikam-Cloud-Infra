@@ -1,6 +1,6 @@
 resource "azurerm_service_plan" "app_plan" {
     name = "${var.project}-plan"
-  resource_group_name = azurerm_resource_group.Prod_rg
+  resource_group_name = azurerm_resource_group.Prod_rg.name
   location = azurerm_resource_group.Prod_rg.location
   sku_name = "F1"
   os_type = "Linux"
@@ -22,7 +22,7 @@ resource "azurerm_linux_web_app" "web_app" {
   
 resource azurerm_sql_server"web_DB_server" {
     name = "${var.project}-sqlserver"
-  resource_group_name = azurerm_resource_group.Prod_rg
+  resource_group_name = azurerm_resource_group.Prod_rg.name
   location = azurerm_resource_group.Prod_rg.location
   version = "12.0"
   administrator_login = var.sql_admin
@@ -31,7 +31,7 @@ resource azurerm_sql_server"web_DB_server" {
 }
 resource "azurerm_sql_database" "App_DB" {
     name = "${var.project}-db"
-  resource_group_name = azurerm_resource_group.Prod_rg
+  resource_group_name = azurerm_resource_group.Prod_rg.name
   location = azurerm_resource_group.Prod_rg.location
   server_name = azurerm_sql_server.web_DB_server.name
   edition = "Basic"
