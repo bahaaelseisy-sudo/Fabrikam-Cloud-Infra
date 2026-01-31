@@ -11,7 +11,7 @@ resource "azurerm_network_interface" "DC_Nic" {
 }
 resource "azurerm_windows_virtual_machine" "DC-VM" {
   name                = "DC-VM"
-  resource_group_name = azurerm_resource_group.hub_rg
+  resource_group_name = azurerm_resource_group.hub_rg.name
   location            = azurerm_resource_group.hub_rg.location
   size                = "Standard_B2s"
   admin_username      = "testadmin"
