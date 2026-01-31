@@ -9,7 +9,7 @@ resource "azurerm_service_plan" "app_plan" {
 
 resource "azurerm_linux_web_app" "web_app" {
     name = "${var.project}-webapp"
-  resource_group_name = azurerm_resource_group.Prod_rg
+  resource_group_name = azurerm_resource_group.Prod_rg.name
   location = azurerm_resource_group.Prod_rg.location
   service_plan_id = azurerm_service_plan.app_plan.id
 
@@ -21,7 +21,7 @@ resource "azurerm_linux_web_app" "web_app" {
 
   
 resource azurerm_sql_server"web_DB_server" {
-    name = "${var.project}-sqlserver"
+    name = "sqlserver"
   resource_group_name = azurerm_resource_group.Prod_rg.name
   location = azurerm_resource_group.Prod_rg.location
   version = "12.0"
