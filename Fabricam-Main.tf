@@ -21,10 +21,7 @@ resource "azurerm_virtual_network" "hub_vnet" {
   resource_group_name = azurerm_resource_group.hub_rg.name
   location            = azurerm_resource_group.hub_rg.location
   address_space       = var.address_space_hub
-  subnet {
-    name = "AzureFirewallSubnet"
-    address_prefixes = var.AzureFirewallSubnet
-  }
+  
    
 
   
@@ -58,17 +55,7 @@ resource "azurerm_virtual_network" "spoke2-vnet" {
   resource_group_name = azurerm_resource_group.Test_rg
   location = var.location_spoke_paris
   address_space = var.vnet_spoke2_address_space
-  subnet{
-    name = "Spoke2-APP"
-    address_prefixes = var.vnet_spoke2_app_subnet
-
-  }
-
-  subnet{
-    name = "Spoke2-DB"
-    address_prefixes = var.vnet_spoke2_db_subnet
   
-  }
   
 }
 resource "azurerm_virtual_network" "onprem-vnet" {
@@ -76,9 +63,35 @@ resource "azurerm_virtual_network" "onprem-vnet" {
   resource_group_name = azurerm_resource_group.hub_rg
   location = var.location_hub
   address_space = var.vnet_onprem_address_space
-  subnet {
-    name = "Identity_Subnet"
-    address_prefixes = var.IdentitySubnet
-  }
+ 
   
 }
+resource "azurerm_subnet" "AzureFWSubnet" {
+  name = "AzureFirewallSubnet"
+  resource_group_name = azurerm_resource_group.hub_rg.name
+  virtual_network_name = azurerm_virtual_network.hub_vnet.name
+  address_prefixes = var.AzureFirewallSubnet
+  
+}
+resource "azurerm_subnet" "App_subnet" {
+  name = "app_subnet"
+  resource_group_name = azurerm_resource_group.hub_rg.name
+  virtual_network_name = azurerm_virtual_network.spoke1-vnet
+  address_prefixes = var.APP_Subnet
+  
+}
+resource "azurerm_subnet" "DB_subnet" {
+  name = "db_subnet"
+  resource_group_name = azurerm_resource_group.hub_rg.name
+  virtual_network_name = azurerm_virtual_network.spoke1-vnet
+  address_prefixes = var.DB_Subnet
+  
+}
+resource "azurerm_subnet" "Identity_subnet" {
+  name = "Identity_subnet"
+  resource_group_name = azurerm_resource_group.hub_rg.name
+  virtual_network_name = azurerm_virtual_network.hub_vnet
+  address_prefixes = var.IdentitySubnet
+  
+}
+
