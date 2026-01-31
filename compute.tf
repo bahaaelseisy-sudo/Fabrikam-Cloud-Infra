@@ -4,7 +4,7 @@ resource "azurerm_network_interface" "DC_Nic" {
   location = azurerm_resource_group.hub_rg.location
   ip_configuration {
     name = "internal"
-    subnet_id = azurerm_virtual_network.onprem-vnet.subnet.id
+    subnet_id = azurerm_subnet.Identity_subnet
     private_ip_address_allocation = "Dynamic"
   }
   
