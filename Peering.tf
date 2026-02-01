@@ -33,7 +33,7 @@ resource "azurerm_virtual_network_peering" "From_hub_to_spoke2" {
 }
 resource "azurerm_virtual_network_peering" "from_spoke2_to_hub" {
     name = "from_spoke2_to_hub"
-    resource_group_name = azurerm_resource_group.Prod_rg.name
+    resource_group_name = azurerm_resource_group.Test_rg.name
     virtual_network_name = azurerm_virtual_network.spoke2-vnet.name
     remote_virtual_network_id = azurerm_virtual_network.hub_vnet.id
     allow_forwarded_traffic = true

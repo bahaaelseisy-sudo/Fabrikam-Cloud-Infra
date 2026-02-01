@@ -1,7 +1,7 @@
 variable "location_hub" {
   description = "the main DC region"
   type = string
-  default = "East US"
+  default = "North Europe"
 }
 variable "location_spoke_paris" {
     description = "paris region"
@@ -22,7 +22,7 @@ variable "vnet_spoke1_address_space" {
 }
 variable "vnet_onprem_address_space" {
     type = list(string)
-    default = [ "192.168.0.0/16" ]
+    default = [ "10.3.0.0/16" ]
 
   
 }
@@ -37,14 +37,14 @@ variable "project" {
 }
 variable "IdentitySubnet" {
     type = list(string)
-    default = [ "192.168.1.0/24" ]
+    default = [ "10.3.1.0/24" ]
 
 
   
 }
 variable "AzureFirewallSubnet" {
     type = list(string) 
-    default = [ "192.168.1.0/24" ] 
+    default = [ "10.0.1.0/26" ] 
   
 }
 variable "APP_Subnet" {
