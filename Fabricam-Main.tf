@@ -29,30 +29,17 @@ resource "azurerm_virtual_network" "hub_vnet" {
 }
 resource "azurerm_virtual_network" "spoke1-vnet" {
   name = "${var.project}-spoke1-vnet"
-  resource_group_name = azurerm_resource_group.Prod_rg
+  resource_group_name = azurerm_resource_group.Prod_rg.name
   location = var.location_hub
   address_space = var.vnet_spoke1_address_space
-  subnet{
-    
-    name = "App_Subnet"
-    address_prefixes = var.APP_Subnet
-
-  }
   
-  subnet{
-    
-    name = "DB_Subnet"
-    address_prefixes = var.DB_Subnet
-
-  }
-
 
 
   
 }
 resource "azurerm_virtual_network" "spoke2-vnet" {
     name = "${var.project}-spoke2-vnet"
-  resource_group_name = azurerm_resource_group.Test_rg
+  resource_group_name = azurerm_resource_group.Test_rg.name
   location = var.location_spoke_paris
   address_space = var.vnet_spoke2_address_space
   
@@ -60,7 +47,7 @@ resource "azurerm_virtual_network" "spoke2-vnet" {
 }
 resource "azurerm_virtual_network" "onprem-vnet" {
   name = "${var.project}-onprem-vnet"
-  resource_group_name = azurerm_resource_group.hub_rg
+  resource_group_name = azurerm_resource_group.hub_rg.name
   location = var.location_hub
   address_space = var.vnet_onprem_address_space
  
@@ -76,21 +63,21 @@ resource "azurerm_subnet" "AzureFWSubnet" {
 resource "azurerm_subnet" "App_subnet" {
   name = "app_subnet"
   resource_group_name = azurerm_resource_group.hub_rg.name
-  virtual_network_name = azurerm_virtual_network.spoke1-vnet
+  virtual_network_name = azurerm_virtual_network.spoke1-vnet.name
   address_prefixes = var.APP_Subnet
   
 }
 resource "azurerm_subnet" "DB_subnet" {
   name = "db_subnet"
   resource_group_name = azurerm_resource_group.hub_rg.name
-  virtual_network_name = azurerm_virtual_network.spoke1-vnet
+  virtual_network_name = azurerm_virtual_network.spoke1-vnet.name
   address_prefixes = var.DB_Subnet
   
 }
 resource "azurerm_subnet" "Identity_subnet" {
   name = "Identity_subnet"
   resource_group_name = azurerm_resource_group.hub_rg.name
-  virtual_network_name = azurerm_virtual_network.hub_vnet
+  virtual_network_name = azurerm_virtual_network.hub_vnet.name
   address_prefixes = var.IdentitySubnet
   
 }

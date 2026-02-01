@@ -1,17 +1,17 @@
 resource "azurerm_network_interface" "DC_Nic" {
   name = "DC_Nic"
-  resource_group_name = azurerm_resource_group.hub_rg
+  resource_group_name = azurerm_resource_group.hub_rg.name
   location = azurerm_resource_group.hub_rg.location
   ip_configuration {
     name = "internal"
-    subnet_id = azurerm_virtual_network.onprem-vnet.subnet.id
+    subnet_id = azurerm_subnet.Identity_subnet.id
     private_ip_address_allocation = "Dynamic"
   }
   
 }
 resource "azurerm_windows_virtual_machine" "DC-VM" {
   name                = "DC-VM"
-  resource_group_name = azurerm_resource_group.hub_rg
+  resource_group_name = azurerm_resource_group.hub_rg.name
   location            = azurerm_resource_group.hub_rg.location
   size                = "Standard_B2s"
   admin_username      = "testadmin"
