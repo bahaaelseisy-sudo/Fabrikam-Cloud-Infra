@@ -43,7 +43,9 @@ stages:
 - stage: Terraform_Apply
   displayName: 'Execution Stage'
   dependsOn: Terraform_Plan
-  condition: succeeded()
+  # التكة هنا: الـ Apply مش هيشتغل غير لو إحنا على الـ main و الـ Plan نجح
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  
   jobs:
   - job: Apply
     steps:
