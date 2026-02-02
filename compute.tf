@@ -4,7 +4,7 @@ resource "azurerm_network_interface" "DC_Nic" {
   location = azurerm_resource_group.hub_rg.location
   ip_configuration {
     name = "internal"
-    subnet_id = azurerm_subnet.Identity_subnet.id
+    subnet_id = azurerm_subnet.on-prem-resources.id #/subscriptions/30d80e3c-9c7b-490c-aaba-8a022a405d1e/resourceGroups/Fabricam-Project-hub-rg/providers/Microsoft.Network/virtualNetworks/Fabricam-Project-onprem-vnet/subnets/on-prem-resources
     private_ip_address_allocation = "Dynamic"
   }
   
