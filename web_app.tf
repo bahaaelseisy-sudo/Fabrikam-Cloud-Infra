@@ -2,7 +2,7 @@ resource "azurerm_service_plan" "app_plan" {
     name = "${var.project}-plan"
   resource_group_name = azurerm_resource_group.Prod_rg.name
   location = azurerm_resource_group.Prod_rg.location
-  sku_name = "B1"
+  sku_name = "F1"
   os_type = "Linux"
 
 }
@@ -36,7 +36,7 @@ resource "azurerm_sql_database" "App_DB" {
   server_name = azurerm_sql_server.web_DB_server.name
   edition = "Basic"
   collation = "SQL_Latin1_General_CP1_CI_AS"
-  max_size_bytes = 52428800
+  max_size_bytes = 2147483648
   
 }
 resource "azurerm_private_endpoint" "Sql-ep" {
@@ -49,7 +49,7 @@ resource "azurerm_private_endpoint" "Sql-ep" {
     name = "${var.project}-sql-privlink"
     private_connection_resource_id = azurerm_sql_server.web_DB_server.id
     is_manual_connection = false
-    subresource_names = ["sqlServer"]
+    subresource_names = ["sqlServer500"]
   }
   
 }
