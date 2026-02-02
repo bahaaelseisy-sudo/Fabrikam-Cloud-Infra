@@ -6,17 +6,6 @@ resource "azurerm_static_site" "web_app" {
   sku_size            = "Free"
 }
 
-resource "azurerm_linux_web_app" "web_app" {
-    name = "${var.project}-webapp"
-  resource_group_name = azurerm_resource_group.Prod_rg.name
-  location = azurerm_resource_group.Prod_rg.location
-  service_plan_id = azurerm_service_plan.app_plan.id
-
-  site_config {
-
-  }
-  identity {type = "SystemAssigned"}
-}
 
   
 resource azurerm_sql_server"web_DB_server" {
