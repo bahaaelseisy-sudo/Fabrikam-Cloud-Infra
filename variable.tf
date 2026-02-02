@@ -35,9 +35,9 @@ variable "project" {
     default = "Fabricam-Project"
   
 }
-variable "IdentitySubnet" {
+variable "on-prem-resources" {
     type = list(string)
-    default = [ "10.3.1.0/24" ]
+    default = [ "10.3.0.0/24" ]
 
 
   
