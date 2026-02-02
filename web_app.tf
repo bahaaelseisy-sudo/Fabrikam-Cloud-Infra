@@ -1,10 +1,9 @@
-resource "azurerm_service_plan" "app_plan" {
-    name = "${var.project}-plan"
+resource "azurerm_static_site" "web_app" {
+  name                = "${var.project}-static-webapp"
   resource_group_name = azurerm_resource_group.Prod_rg.name
-  location = azurerm_resource_group.Prod_rg.location
-  sku_name = "F1"
-  os_type = "Linux"
-
+  location            = "West Europe" # الـ Static Web App متاح في مناطق محددة (West Europe هي الأقرب لـ North Europe)
+  sku_tier            = "Free"
+  sku_size            = "Free"
 }
 
 resource "azurerm_linux_web_app" "web_app" {
@@ -36,7 +35,7 @@ resource "azurerm_sql_database" "App_DB" {
   server_name = azurerm_sql_server.web_DB_server.name
   edition = "Basic"
   collation = "SQL_Latin1_General_CP1_CI_AS"
-  max_size_bytes = 2147483648
+  
   
 }
 resource "azurerm_private_endpoint" "Sql-ep" {
@@ -49,7 +48,7 @@ resource "azurerm_private_endpoint" "Sql-ep" {
     name = "${var.project}-sql-privlink"
     private_connection_resource_id = azurerm_sql_server.web_DB_server.id
     is_manual_connection = false
-    subresource_names = ["sqlServer500"]
+    subresource_names = ["sqlServer"]
   }
   
 }
