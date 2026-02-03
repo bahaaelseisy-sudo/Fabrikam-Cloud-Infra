@@ -13,7 +13,7 @@ resource "azurerm_windows_virtual_machine" "DC-VM" {
   name                = "DC-VM"
   resource_group_name = azurerm_resource_group.hub_rg.name
   location            = azurerm_resource_group.hub_rg.location
-  size                = "Standard_B2s"
+  size                = "Standard_D2s_v3"
   admin_username      = "testadmin"
   admin_password      = "Password1234!"
   network_interface_ids = [
@@ -26,7 +26,7 @@ resource "azurerm_windows_virtual_machine" "DC-VM" {
   source_image_reference {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
-    sku       = "2016-Datacenter"
+    sku       = "2022-Datacenter"
     version   = "latest"
   }
 }
