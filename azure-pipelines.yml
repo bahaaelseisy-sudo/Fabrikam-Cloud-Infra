@@ -66,3 +66,8 @@ stages:
         provider: 'azurerm'
         command: 'apply'
         environmentServiceNameAzureRM: '$(serviceConnection)'
+    - task: AzureStaticWebApp@0
+      displayName: 'Deploy Branding and Config'
+      inputs:
+        app_location: 'APP'
+        azure_static_web_apps_api_token: $(deployment_token)
