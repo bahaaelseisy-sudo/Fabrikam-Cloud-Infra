@@ -66,4 +66,8 @@ stages:
         provider: 'azurerm'
         command: 'apply'
         environmentServiceNameAzureRM: '$(serviceConnection)'
-
+    - task: AzureStaticWebApp@0
+      inputs:
+        app_location: 'APP' 
+        is_static_export: true
+        azure_static_web_apps_api_token: $(deployment_token)
