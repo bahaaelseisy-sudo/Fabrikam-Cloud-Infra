@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8" />
@@ -10,10 +10,10 @@
 
     <style>
         :root {
-            --brand-main: #00c3ff;      /* سماوي فاتر – مناسب لشعارك */
+            --brand-main: #00c3ff;
             --brand-main-hover: #00d6ff;
-            --brand-dark: #001a27;      /* الأزرق الداكن */
-            --brand-gold: #f5c16c;      /* لون الهرم */
+            --brand-dark: #001a27;
+            --brand-gold: #f5c16c;
         }
 
         * { box-sizing: border-box; }
@@ -22,15 +22,12 @@
             margin: 0;
             padding: 0;
             font-family: "Segoe UI", Tahoma, sans-serif;
-            direction: rtl;
-
-            /* الخلفية */
             background: url("assets/bg.jpg") no-repeat center center fixed;
             background-size: cover;
-            backdrop-filter: blur(1px);
+            direction: rtl;
+            color: #fff;
         }
 
-        /* طبقة تعتيم */
         .overlay {
             background: rgba(0,0,0,0.55);
             width: 100%;
@@ -40,7 +37,6 @@
             z-index: 0;
         }
 
-        /* Header */
         .header {
             position: relative;
             z-index: 2;
@@ -62,7 +58,6 @@
             font-weight: 600;
         }
 
-        /* Box في المنتصف */
         .center-box {
             position: relative;
             z-index: 2;
@@ -73,7 +68,6 @@
             padding: 50px;
             border-radius: 18px;
             text-align: center;
-            color: white;
             box-shadow: 0 6px 35px rgba(0,0,0,0.4);
         }
 
@@ -83,13 +77,14 @@
             font-weight: 700;
         }
 
-        .subtitle {
-            font-size: 16px;
-            margin-bottom: 30px;
-            opacity: 0.85;
+        .btns {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 30px;
         }
 
-        /* Login Button */
         .btn-login {
             display: inline-block;
             background: var(--brand-main);
@@ -99,7 +94,7 @@
             font-weight: bold;
             text-decoration: none;
             border-radius: 10px;
-            transition: 0.2s ease;
+            transition: .2s ease;
             box-shadow: 0 4px 14px rgba(0,195,255,0.35);
         }
 
@@ -112,7 +107,6 @@
             position: relative;
             z-index: 2;
             text-align: center;
-            color: #e1e1e1;
             opacity: 0.7;
             font-size: 13px;
             margin-top: 70px;
@@ -134,13 +128,15 @@
     <!-- Main Box -->
     <div class="center-box">
         <div class="title">مرحباً بك في البوابة الإلكترونية</div>
-        <div class="subtitle">
-            لتسجيل الدخول، الرجاء استخدام حساب Azure Active Directory الخاص بك.
-        </div>
 
-        <a href="/.auth/login/aad" class="btn-login">
-            تسجيل الدخول الآمن
-        </a>
+        <!-- الأزرار الجديدة -->
+        <div class="btns">
+            <!-- تسجيل الموظفين (Entra ID) -->
+            <a href="/login-employees" class="btn-login">تسجيل الموظفين</a>
+
+            <!-- تسجيل العملاء (External ID) -->
+            <a href="/login-customers" class="btn-login">تسجيل العملاء</a>
+        </div>
     </div>
 
     <div class="footer">

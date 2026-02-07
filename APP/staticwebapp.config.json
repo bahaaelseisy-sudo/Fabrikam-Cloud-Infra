@@ -7,31 +7,52 @@
           "clientIdSettingName": "AAD_CLIENT_ID",
           "clientSecretSettingName": "AAD_CLIENT_SECRET"
         }
+      },
+      "customOpenIdConnectProviders": {
+        "aadb2c": {
+          "registration": {
+            "clientIdSettingName": "AADB2C_CLIENT_ID",
+            "clientCredential": {
+              "clientSecretSettingName": "AADB2C_CLIENT_SECRET"
+            },
+            "openIdConnectConfiguration": {
+              "wellKnownOpenIdConfiguration": "https://tamimcustomers.b2clogin.com/tamimcustomers.onmicrosoft.com/B2C_1_susi/v2.0/.well-known/openid-configuration"
+            }
+          },
+          "login": {
+            "scopes": ["openid", "profile", "email"]
+          }
+        }
       }
     }
   },
 
   "routes": [
-    {
-      "route": "/",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/dashboard/*",
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/login",
-      "rewrite": "/.auth/login/aad"
-    },
-    {
-      "route": "/logout",
-      "redirect": "/.auth/logout",
-      "statusCode": 302
-    }
+    { "route": "/", "allowedRoles": ["anonymous", "authenticated"] },
+
+    /* مسارات لوجين/لوج آوت ودّية بدل كشف /.auth مباشرة */
+    { "route": "/login-employees", "redirect": "/.auth/login/aad", "statusCode": 302 },
+    { "route": "/login-customers", "redirect": "/.auth/login/aadb2c", "statusCode": 302 },
+    { "route": "/logout", "redirect": "/.auth/logout", "statusCode": 302 },
+
+    /* صفحات/لوحات محمية (مثال) */
+    { "route": "/dashboard/*", "allowedRoles": ["authenticated"] }
   ],
 
   "navigationFallback": {
-    "rewrite": "/index.html"
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "/images/*", "/api/*", "/.auth/*"]
+  },
+
+  "responseOverrides": {
+    "401": { "statusCode": 302, "redirect": "/login-customers" }
+  },
+
+  "globalHeaders": {
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+    "Content-Security-Policy": "default-src 'self'; img-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'"
   }
 }
