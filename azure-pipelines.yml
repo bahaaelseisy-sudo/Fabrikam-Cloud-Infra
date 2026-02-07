@@ -88,12 +88,13 @@ stages:
 
 # --------- 3) Deploy Static Web App ----------
 
+# --------- 3) Deploy Static Web App ----------
 - stage: SWA_Deploy
   displayName: 'Deploy Static Web App'
   dependsOn: Terraform_Apply
   condition: succeeded()
   pool:
-    name: 'Default'    # استخدم نفس ال self-hosted agent
+    name: 'Default'    # نفس الـ self-hosted Windows Agent
 
   jobs:
   - job: DeploySWA
@@ -102,18 +103,40 @@ stages:
     - checkout: self
 
     - task: AzureCLI@2
-      displayName: 'Deploy to SWA via Azure CLI'
+      displayName: 'Deploy to SWA via Azure CLI (PowerShell)'
       inputs:
-        azureSubscription: '$(serviceConnection)'   # نفس السيرفس كونكشن
-        scriptType: 'bash'
+        azureSubscription: '$(serviceConnection)'    # نفس السيرفس كونكشن اللي بتستخدمه في TF
+        scriptType: 'ps'                              # <<< مهم: PowerShell مش bash
         scriptLocation: 'inlineScript'
         inlineScript: |
-          # تأكد إن Azure CLI عندك شغّال
-          az --version
+          Write-Host "Azure CLI version:"
+          az version
 
-          # أمر النشر باستخدام SWA CLI الأصلي
-          az staticwebapp upload \
-            --name Fabricam-Project-static-webapp \
-            --resource-group Fabricam-Project-prod-rg \
-            --source APP \
-            --token $(deployment_token)
+          # متغيرات النشر
+          $swaName = "Fabricam-Project-static-webapp"          # اسم الـ Static Web App
+          $swaRg   = "Fabricam-Project-prod-rg"            # اسم الـ Resource Group
+          $srcPath = "$(System.DefaultWorkingDirectory)\APP"  # فولدر ملفات الموقع
+          $token   = "$(deployment_token)"       # سيكرت من Variables
+
+          Write-Host "Uploading to SWA: $swaName in RG: $swaRg from: $srcPath"
+
+          # (اختياري) أضف الإكستينشن لو مش موجود
+          az extension show --name staticwebapp 2>$null | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Adding 'staticwebapp' extension..."
+            az extension add --name staticwebapp --yes
+          }
+
+          # نشر الملفات مباشرة
+          az staticwebapp upload `
+            --name $swaName `
+            --resource-group $swaRg `
+            --source $srcPath `
+            --token $token
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "SWA upload failed."
+            exit 1
+          } else {
+            Write-Host "SWA upload completed successfully."
+          }
