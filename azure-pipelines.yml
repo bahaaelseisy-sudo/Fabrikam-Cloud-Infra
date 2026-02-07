@@ -89,12 +89,13 @@ stages:
 # --------- 3) Deploy Static Web App ----------
 
 # --------- 3) Deploy Static Web App ----------
+# --------- 3) Deploy Static Web App ----------
 - stage: SWA_Deploy
   displayName: 'Deploy Static Web App'
   dependsOn: Terraform_Apply
   condition: succeeded()
   pool:
-    name: 'Default'    # نفس الـ self-hosted Windows Agent
+    name: 'Default'    # نفس ال self-hosted Windows Agent
 
   jobs:
   - job: DeploySWA
@@ -105,29 +106,63 @@ stages:
     - task: AzureCLI@2
       displayName: 'Deploy to SWA via Azure CLI (PowerShell)'
       inputs:
-        azureSubscription: '$(serviceConnection)'    # نفس السيرفس كونكشن اللي بتستخدمه في TF
-        scriptType: 'ps'                              # <<< مهم: PowerShell مش bash
+        azureSubscription: '$(serviceConnection)'
+        scriptType: 'ps'
         scriptLocation: 'inlineScript'
         inlineScript: |
-          Write-Host "Azure CLI version:"
-          az version
+          Write-Host "Azure CLI version:"; az version
 
-          # متغيرات النشر
-          $swaName = "Fabricam-Project-static-webapp"          # اسم الـ Static Web App
-          $swaRg   = "Fabricam-Project-prod-rg"            # اسم الـ Resource Group
-          $srcPath = "$(System.DefaultWorkingDirectory)\APP"  # فولدر ملفات الموقع
-          $token   = "$(deployment_token)"       # سيكرت من Variables
+          $swaName = "Fabricam-Project-static-webapp"      # ← اسم الـ Static Web App
+          $swaRg   = "Fabricam-Project-prod-rg"        # ← الـ Resource Group
+          $srcPath = "$(System.DefaultWorkingDirectory)\APP"
+          $token   = "$(deployment_token)"
 
-          Write-Host "Uploading to SWA: $swaName in RG: $swaRg from: $srcPath"
+          # تثبيت/تحديث الإكستينشن staticwebapp مع إعادة محاولة
+          function Ensure-StaticWebAppExtension {
+            Write-Host "Checking staticwebapp extension..."
+            $hasExt = $false
+            try {
+              az extension show --name staticwebapp | Out-Null
+              $hasExt = $true
+            } catch {
+              $hasExt = $false
+            }
 
-          # (اختياري) أضف الإكستينشن لو مش موجود
-          az extension show --name staticwebapp 2>$null | Out-Null
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "Adding 'staticwebapp' extension..."
-            az extension add --name staticwebapp --yes
+            if (-not $hasExt) {
+              Write-Host "Adding 'staticwebapp' extension..."
+              az extension add --name staticwebapp --yes
+            } else {
+              Write-Host "'staticwebapp' extension already installed. Updating..."
+              az extension update --name staticwebapp --yes
+            }
           }
 
-          # نشر الملفات مباشرة
+          # بعض الإصدارات تحتاج az upgrade قبل إضافة الإكستينشن
+          try {
+            Write-Host "Upgrading Azure CLI (safe)..."
+            az upgrade --yes --only-show-errors
+          } catch {
+            Write-Warning "az upgrade failed or not permitted; continuing..."
+          }
+
+          # حاول تثبيت/تحديث الإكستينشن مع إعادة المحاولة
+          $maxAttempts = 2
+          for ($i=1; $i -le $maxAttempts; $i++) {
+            try {
+              Ensure-StaticWebAppExtension
+              break
+            } catch {
+              if ($i -eq $maxAttempts) {
+                Write-Error "Failed to install/update staticwebapp extension after $maxAttempts attempts."
+                exit 1
+              } else {
+                Write-Warning "Retrying staticwebapp extension install... attempt $($i+1)"
+                Start-Sleep -Seconds 5
+              }
+            }
+          }
+
+          Write-Host "Uploading to SWA: $swaName in RG: $swaRg from: $srcPath"
           az staticwebapp upload `
             --name $swaName `
             --resource-group $swaRg `
