@@ -27,17 +27,16 @@ stages:
     displayName: 'Terraform Plan'
     steps:
     # (مرة واحدة فقط) Force unlock قبل init — احذفها بعد نجاح أول ران
-    - task: TerraformTaskV4@4
+    # (مرة واحدة فقط) Force unlock via CLI
+    - task: PowerShell@2
       displayName: 'Force unlock state (one-off)'
       inputs:
-        provider: 'azurerm'
-        command: 'custom'
-        customCommand: 'force-unlock'
-        customCommandOptions: '-force b3e2b1a4-da43-312c-86aa-d14fc70fd588'
-        # ملفات Terraform عندك في جذر الريبو
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
-        environmentServiceNameAzureRM: '$(serviceConnection)'
-
+        targetType: 'inline'
+        script: |
+          cd "$(System.DefaultWorkingDirectory)"
+          # نفّذ Terraform مباشرة مع الـ LOCK_ID
+          "Running: C:\terraform\terraform.exe force-unlock -force b3e2b1a4-da43-312c-86aa-d14fc70fd588"
+          C:\terraform\terraform.exe force-unlock -force b3e2b1a4-da43-312c-86aa-d14fc70fd588
     - task: TerraformTaskV4@4
       displayName: 'Terraform Init (plan)'
       inputs:
