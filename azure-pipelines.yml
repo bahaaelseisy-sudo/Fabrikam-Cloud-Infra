@@ -87,10 +87,15 @@ stages:
         workingDirectory: '$(System.DefaultWorkingDirectory)'
 
 # --------- 3) Deploy Static Web App ----------
+
 - stage: SWA_Deploy
   displayName: 'Deploy Static Web App'
   dependsOn: Terraform_Apply
   condition: succeeded()
+  # شغّل مرحلة النشر على Microsoft-hosted Ubuntu (فيه Bash + Docker جاهزين)
+  pool:
+    vmImage: 'ubuntu-latest'
+
   jobs:
   - job: DeploySWA
     displayName: 'Publish to Azure Static Web Apps'
@@ -99,6 +104,7 @@ stages:
     - task: AzureStaticWebApp@0
       displayName: 'Deploy Static Web App'
       inputs:
-        azure_static_web_apps_api_token: '$(deployment_token)'
-        app_location: 'APP'
-        output_location: ''
+        azure_static_web_apps_api_token: '$(deployment_token)'  # Secret من Variables
+        app_location: 'APP'     # مكان index.html و staticwebapp.config.json
+        output_location: ''     # Static files (بدون build)
+        # api_location: ''      # لو أضفت Functions لاحقاً
