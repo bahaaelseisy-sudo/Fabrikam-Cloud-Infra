@@ -1,30 +1,31 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
+# ===== Starter pipeline (معدّل) =====
 trigger:
 - main
 
+# استخدم الـ Agent Pool اللي عندك أو لو حابب استخدم Microsoft-hosted بدّل للسطر:
+# pool: { vmImage: 'ubuntu-latest' }
 pool:
-  name: 'Default' # اسم الـ Pool اللي فيه الـ Agent بتاعك على الجهاز
+  name: 'Default'  # الAgent الذاتي عندك
 
 variables:
-  # تأكد إن الأسامي دي مطابقة للي في الأزور عندك
   serviceConnection: 'Fabrikam-Manual-SP'
   storageRG: 'Terraform-Management-RG'
   storageAccount: 'fabtfstate2026'
   container: 'tfstate'
   tfstateKey: 'prod.terraform.tfstate'
+  # NOTE: أضف deployment_token من UI كمتغير سري (ما تكتبهوش هنا)
 
 stages:
+
+# --------- 1) Terraform Plan ----------
 - stage: Terraform_Plan
   displayName: 'Plan Stage'
   jobs:
   - job: Plan
+    displayName: 'Terraform Plan'
     steps:
     - task: TerraformTaskV4@4
-      displayName: 'Init'
+      displayName: 'Terraform Init (plan)'
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -35,22 +36,23 @@ stages:
         backendAzureRmKey: '$(tfstateKey)'
 
     - task: TerraformTaskV4@4
-      displayName: 'Plan'
+      displayName: 'Terraform Plan'
       inputs:
         provider: 'azurerm'
         command: 'plan'
         environmentServiceNameAzureRM: '$(serviceConnection)'
+
+# --------- 2) Terraform Apply ----------
 - stage: Terraform_Apply
   displayName: 'Execution Stage'
   dependsOn: Terraform_Plan
-  # التكة هنا: الـ Apply مش هيشتغل غير لو إحنا على الـ main و الـ Plan نجح
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  
   jobs:
   - job: Apply
+    displayName: 'Terraform Apply'
     steps:
     - task: TerraformTaskV4@4
-      displayName: 'Terraform Init'
+      displayName: 'Terraform Init (apply)'
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -66,8 +68,21 @@ stages:
         provider: 'azurerm'
         command: 'apply'
         environmentServiceNameAzureRM: '$(serviceConnection)'
+
+# --------- 3) Deploy Static Web App ----------
+- stage: SWA_Deploy
+  displayName: 'Deploy Static Web App'
+  dependsOn: Terraform_Apply
+  condition: succeeded()
+  jobs:
+  - job: DeploySWA
+    displayName: 'Publish to Azure Static Web Apps'
+    steps:
+    - checkout: self
     - task: AzureStaticWebApp@0
+      displayName: 'Deploy Static Web App'
       inputs:
-        app_location: 'APP' 
-        is_static_export: true
-        azure_static_web_apps_api_token: $(deployment_token)
+        azure_static_web_apps_api_token: '$(deployment_token)'
+        app_location: 'APP'    # مكان index.html و staticwebapp.config.json
+        output_location: ''    # مفيش build (Static HTML)
+        # api_location: ''     # لو لاحقاً أضفت Functions حط مسارها هنا
