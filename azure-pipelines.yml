@@ -2,12 +2,8 @@
 trigger:
 - main
 
-# لو بتستخدم self-hosted agent:
 pool:
-  name: 'Default'
-# لو تحب Microsoft-hosted بدل الذاتي، بدّل للسطرين دول:
-# pool:
-#   vmImage: 'ubuntu-latest'
+  name: 'Default'  # Self-hosted agent (عندك)
 
 variables:
   serviceConnection: 'Fabrikam-Manual-SP'
@@ -15,7 +11,7 @@ variables:
   storageAccount: 'fabtfstate2026'
   container: 'tfstate'
   tfstateKey: 'prod.terraform.tfstate'
-  # NOTE: أضف deployment_token من UI كمتغير سري (Variables) ولا تكتبه هنا.
+  # أضف متغير secret باسم deployment_token من UI
 
 stages:
 
@@ -26,17 +22,30 @@ stages:
   - job: Plan
     displayName: 'Terraform Plan'
     steps:
-    # (مرة واحدة فقط) Force unlock قبل init — احذفها بعد نجاح أول ران
-    # (مرة واحدة فقط) Force unlock via CLI
+    # (A) init أولاً عشان backend يبقى مهيّأ قبل force-unlock
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Init (pre-unlock)'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: '$(serviceConnection)'
+        backendAzureRmResourceGroupName: '$(storageRG)'
+        backendAzureRmStorageAccountName: '$(storageAccount)'
+        backendAzureRmContainerName: '$(container)'
+        backendAzureRmKey: '$(tfstateKey)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+    # (B) Force unlock via CLI — مرة واحدة فقط، احذفها بعد نجاحها
     - task: PowerShell@2
       displayName: 'Force unlock state (one-off)'
       inputs:
         targetType: 'inline'
         script: |
           cd "$(System.DefaultWorkingDirectory)"
-          # نفّذ Terraform مباشرة مع الـ LOCK_ID
           "Running: C:\terraform\terraform.exe force-unlock -force b3e2b1a4-da43-312c-86aa-d14fc70fd588"
           C:\terraform\terraform.exe force-unlock -force b3e2b1a4-da43-312c-86aa-d14fc70fd588
+
+    # (C) init مرة تانية (اختياري لكنه آمن)
     - task: TerraformTaskV4@4
       displayName: 'Terraform Init (plan)'
       inputs:
@@ -49,6 +58,7 @@ stages:
         backendAzureRmKey: '$(tfstateKey)'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
 
+    # (D) Plan
     - task: TerraformTaskV4@4
       displayName: 'Terraform Plan'
       inputs:
@@ -61,7 +71,6 @@ stages:
 - stage: Terraform_Apply
   displayName: 'Execution Stage'
   dependsOn: Terraform_Plan
-  # الـ Apply يشتغل فقط لو الـ Plan نجح وعلى فرع main
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
   - job: Apply
@@ -100,7 +109,6 @@ stages:
     - task: AzureStaticWebApp@0
       displayName: 'Deploy Static Web App'
       inputs:
-        azure_static_web_apps_api_token: '$(deployment_token)'  # من Variables كـ Secret
-        app_location: 'APP'     # مكان index.html و staticwebapp.config.json
-        output_location: ''     # مشروع static (بدون build)
-        # api_location: ''      # لو أضفت Functions لاحقاً
+        azure_static_web_apps_api_token: '$(deployment_token)'
+        app_location: 'APP'
+        output_location: ''
