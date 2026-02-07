@@ -2,10 +2,12 @@
 trigger:
 - main
 
-# استخدم الـ Agent Pool اللي عندك أو لو حابب استخدم Microsoft-hosted بدّل للسطر:
-# pool: { vmImage: 'ubuntu-latest' }
+# لو بتستخدم self-hosted agent:
 pool:
-  name: 'Default'  # الAgent الذاتي عندك
+  name: 'Default'
+# لو تحب Microsoft-hosted بدل الذاتي، بدّل للسطرين دول:
+# pool:
+#   vmImage: 'ubuntu-latest'
 
 variables:
   serviceConnection: 'Fabrikam-Manual-SP'
@@ -13,7 +15,7 @@ variables:
   storageAccount: 'fabtfstate2026'
   container: 'tfstate'
   tfstateKey: 'prod.terraform.tfstate'
-  # NOTE: أضف deployment_token من UI كمتغير سري (ما تكتبهوش هنا)
+  # NOTE: أضف deployment_token من UI كمتغير سري (Variables) ولا تكتبه هنا.
 
 stages:
 
@@ -24,6 +26,18 @@ stages:
   - job: Plan
     displayName: 'Terraform Plan'
     steps:
+    # (مرة واحدة فقط) Force unlock قبل init — احذفها بعد نجاح أول ران
+    - task: TerraformTaskV4@4
+      displayName: 'Force unlock state (one-off)'
+      inputs:
+        provider: 'azurerm'
+        command: 'custom'
+        customCommand: 'force-unlock'
+        customCommandOptions: '-force b3e2b1a4-da43-312c-86aa-d14fc70fd588'
+        # ملفات Terraform عندك في جذر الريبو
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+        environmentServiceNameAzureRM: '$(serviceConnection)'
+
     - task: TerraformTaskV4@4
       displayName: 'Terraform Init (plan)'
       inputs:
@@ -34,6 +48,7 @@ stages:
         backendAzureRmStorageAccountName: '$(storageAccount)'
         backendAzureRmContainerName: '$(container)'
         backendAzureRmKey: '$(tfstateKey)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
 
     - task: TerraformTaskV4@4
       displayName: 'Terraform Plan'
@@ -41,11 +56,13 @@ stages:
         provider: 'azurerm'
         command: 'plan'
         environmentServiceNameAzureRM: '$(serviceConnection)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
 
 # --------- 2) Terraform Apply ----------
 - stage: Terraform_Apply
   displayName: 'Execution Stage'
   dependsOn: Terraform_Plan
+  # الـ Apply يشتغل فقط لو الـ Plan نجح وعلى فرع main
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
   - job: Apply
@@ -61,6 +78,7 @@ stages:
         backendAzureRmStorageAccountName: '$(storageAccount)'
         backendAzureRmContainerName: '$(container)'
         backendAzureRmKey: '$(tfstateKey)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
 
     - task: TerraformTaskV4@4
       displayName: 'Terraform Apply'
@@ -68,6 +86,7 @@ stages:
         provider: 'azurerm'
         command: 'apply'
         environmentServiceNameAzureRM: '$(serviceConnection)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
 
 # --------- 3) Deploy Static Web App ----------
 - stage: SWA_Deploy
@@ -82,7 +101,7 @@ stages:
     - task: AzureStaticWebApp@0
       displayName: 'Deploy Static Web App'
       inputs:
-        azure_static_web_apps_api_token: '$(deployment_token)'
-        app_location: 'APP'    # مكان index.html و staticwebapp.config.json
-        output_location: ''    # مفيش build (Static HTML)
-        # api_location: ''     # لو لاحقاً أضفت Functions حط مسارها هنا
+        azure_static_web_apps_api_token: '$(deployment_token)'  # من Variables كـ Secret
+        app_location: 'APP'     # مكان index.html و staticwebapp.config.json
+        output_location: ''     # مشروع static (بدون build)
+        # api_location: ''      # لو أضفت Functions لاحقاً
