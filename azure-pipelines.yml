@@ -88,7 +88,7 @@ stages:
 
 # --------- 3) Deploy Static Web App ----------
 
-# --------- 3) Deploy Static Web App ----------
+
 # --------- 3) Deploy Static Web App ----------
 - stage: SWA_Deploy
   displayName: 'Deploy Static Web App'
@@ -106,8 +106,8 @@ stages:
     - task: AzureCLI@2
       displayName: 'Deploy to SWA via Azure CLI (PowerShell)'
       inputs:
-        azureSubscription: '$(serviceConnection)'
-        scriptType: 'ps'
+        azureSubscription: '$(serviceConnection)'   # نفس السيرفس كونكشن المستخدم مع Terraform
+        scriptType: 'ps'                            # مهم: PowerShell (مش bash)
         scriptLocation: 'inlineScript'
         inlineScript: |
           Write-Host "Azure CLI version:"; az version
@@ -117,49 +117,36 @@ stages:
           $srcPath = "$(System.DefaultWorkingDirectory)\APP"
           $token   = "$(deployment_token)"
 
-          # تثبيت/تحديث الإكستينشن staticwebapp مع إعادة محاولة
-          function Ensure-StaticWebAppExtension {
-            Write-Host "Checking staticwebapp extension..."
-            $hasExt = $false
-            try {
-              az extension show --name staticwebapp | Out-Null
-              $hasExt = $true
-            } catch {
-              $hasExt = $false
-            }
-
-            if (-not $hasExt) {
-              Write-Host "Adding 'staticwebapp' extension..."
-              az extension add --name staticwebapp --yes
-            } else {
-              Write-Host "'staticwebapp' extension already installed. Updating..."
-              az extension update --name staticwebapp --yes
-            }
-          }
-
-          # بعض الإصدارات تحتاج az upgrade قبل إضافة الإكستينشن
+          # (اختياري) ترقية CLI لو متاحة
           try {
-            Write-Host "Upgrading Azure CLI (safe)..."
+            Write-Host "Attempting az upgrade (safe)..."
             az upgrade --yes --only-show-errors
           } catch {
-            Write-Warning "az upgrade failed or not permitted; continuing..."
+            Write-Warning "az upgrade not performed; continuing..."
           }
 
-          # حاول تثبيت/تحديث الإكستينشن مع إعادة المحاولة
-          $maxAttempts = 2
-          for ($i=1; $i -le $maxAttempts; $i++) {
-            try {
-              Ensure-StaticWebAppExtension
-              break
-            } catch {
-              if ($i -eq $maxAttempts) {
-                Write-Error "Failed to install/update staticwebapp extension after $maxAttempts attempts."
-                exit 1
-              } else {
-                Write-Warning "Retrying staticwebapp extension install... attempt $($i+1)"
-                Start-Sleep -Seconds 5
-              }
-            }
+          # تأكيد وجود/تثبيت/تحديث إكستينشن staticwebapp بالشكل الصحيح
+          $hasExt = $false
+          try {
+            az extension show --name staticwebapp | Out-Null
+            $hasExt = $true
+          } catch {
+            $hasExt = $false
+          }
+
+          if (-not $hasExt) {
+            Write-Host "Adding 'staticwebapp' extension..."
+            az extension add --name staticwebapp
+          } else {
+            Write-Host "'staticwebapp' extension found. Updating..."
+            az extension update --name staticwebapp
+          }
+
+          # تحقّق أخير: الأوامر موجودة؟
+          az staticwebapp --help 1>$null 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "staticwebapp extension not loaded; cannot proceed."
+            exit 1
           }
 
           Write-Host "Uploading to SWA: $swaName in RG: $swaRg from: $srcPath"
