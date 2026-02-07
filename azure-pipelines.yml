@@ -86,7 +86,7 @@ stages:
         environmentServiceNameAzureRM: '$(serviceConnection)'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-# --------- 3) Deploy Static Web App ----------
+
 
 
 # --------- 3) Deploy Static Web App ----------
@@ -95,7 +95,7 @@ stages:
   dependsOn: Terraform_Apply
   condition: succeeded()
   pool:
-    name: 'Default'    # نفس ال self-hosted Windows Agent
+    name: 'Default'    # self-hosted Windows agent
 
   jobs:
   - job: DeploySWA
@@ -104,51 +104,49 @@ stages:
     - checkout: self
 
     - task: AzureCLI@2
-      displayName: 'Deploy to SWA via Azure CLI (PowerShell)'
+      displayName: 'Deploy to SWA via Azure CLI (PowerShell, clean install ext)'
       inputs:
-        azureSubscription: '$(serviceConnection)'   # نفس السيرفس كونكشن المستخدم مع Terraform
-        scriptType: 'ps'                            # مهم: PowerShell (مش bash)
+        azureSubscription: '$(serviceConnection)'
+        scriptType: 'ps'
         scriptLocation: 'inlineScript'
         inlineScript: |
           Write-Host "Azure CLI version:"; az version
 
-          $swaName = "Fabricam-Project-static-webapp"      # ← اسم الـ Static Web App
-          $swaRg   = "Fabricam-Project-prod-rg"        # ← الـ Resource Group
+          $swaName = "Fabricam-Project-static-webapp"        # ← اسم SWA
+          $swaRg   = " Fabricam-Project-prod-rg"          # ← Resource Group
           $srcPath = "$(System.DefaultWorkingDirectory)\APP"
           $token   = "$(deployment_token)"
 
-          # (اختياري) ترقية CLI لو متاحة
+          # 1) إزالة أي نسخة للإضافة (لو موجودة) لتفادي اللخبطة
           try {
-            Write-Host "Attempting az upgrade (safe)..."
-            az upgrade --yes --only-show-errors
+            Write-Host "Removing 'staticwebapp' extension if present..."
+            az extension remove --name staticwebapp
           } catch {
-            Write-Warning "az upgrade not performed; continuing..."
+            Write-Warning "Remove extension failed or not installed; continuing..."
           }
 
-          # تأكيد وجود/تثبيت/تحديث إكستينشن staticwebapp بالشكل الصحيح
-          $hasExt = $false
-          try {
-            az extension show --name staticwebapp | Out-Null
-            $hasExt = $true
-          } catch {
-            $hasExt = $false
-          }
-
-          if (-not $hasExt) {
-            Write-Host "Adding 'staticwebapp' extension..."
-            az extension add --name staticwebapp
-          } else {
-            Write-Host "'staticwebapp' extension found. Updating..."
-            az extension update --name staticwebapp
-          }
-
-          # تحقّق أخير: الأوامر موجودة؟
-          az staticwebapp --help 1>$null 2>$null
+          # 2) تثبيت الإضافة من الصفر
+          Write-Host "Adding 'staticwebapp' extension cleanly..."
+          az extension add --name staticwebapp
           if ($LASTEXITCODE -ne 0) {
-            Write-Error "staticwebapp extension not loaded; cannot proceed."
+            Write-Error "Failed to add 'staticwebapp' extension."
             exit 1
           }
 
+          # 3) تحقّق أن الإضافة اتثبتت فعلاً
+          $extOk = $false
+          try {
+            $out = az extension list --output tsv --query "[?name=='staticwebapp'].name"
+            if ($out -match "staticwebapp") { $extOk = $true }
+          } catch {
+            $extOk = $false
+          }
+          if (-not $extOk) {
+            Write-Error "'staticwebapp' extension not loaded; cannot proceed."
+            exit 1
+          }
+
+          # 4) نشر محتوى مجلد APP
           Write-Host "Uploading to SWA: $swaName in RG: $swaRg from: $srcPath"
           az staticwebapp upload `
             --name $swaName `
