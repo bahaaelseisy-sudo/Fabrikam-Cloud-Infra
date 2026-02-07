@@ -92,19 +92,28 @@ stages:
   displayName: 'Deploy Static Web App'
   dependsOn: Terraform_Apply
   condition: succeeded()
-  # شغّل مرحلة النشر على Microsoft-hosted Ubuntu (فيه Bash + Docker جاهزين)
   pool:
-    vmImage: 'ubuntu-latest'
+    name: 'Default'    # استخدم نفس ال self-hosted agent
 
   jobs:
   - job: DeploySWA
     displayName: 'Publish to Azure Static Web Apps'
     steps:
     - checkout: self
-    - task: AzureStaticWebApp@0
-      displayName: 'Deploy Static Web App'
+
+    - task: AzureCLI@2
+      displayName: 'Deploy to SWA via Azure CLI'
       inputs:
-        azure_static_web_apps_api_token: '$(deployment_token)'  # Secret من Variables
-        app_location: 'APP'     # مكان index.html و staticwebapp.config.json
-        output_location: ''     # Static files (بدون build)
-        # api_location: ''      # لو أضفت Functions لاحقاً
+        azureSubscription: '$(serviceConnection)'   # نفس السيرفس كونكشن
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          # تأكد إن Azure CLI عندك شغّال
+          az --version
+
+          # أمر النشر باستخدام SWA CLI الأصلي
+          az staticwebapp upload \
+            --name Fabricam-Project-static-webapp \
+            --resource-group Fabricam-Project-prod-rg \
+            --source APP \
+            --token $(deployment_token)
