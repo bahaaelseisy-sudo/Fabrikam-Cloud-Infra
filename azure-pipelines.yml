@@ -95,68 +95,31 @@ stages:
   dependsOn: Terraform_Apply
   condition: succeeded()
   pool:
-    name: 'Default'    # self-hosted Windows agent
+    name: 'Default'    # نفس الـ self-hosted agent
 
   jobs:
   - job: DeploySWA
-    displayName: 'Publish to Azure Static Web Apps'
+    displayName: 'Publish to Azure Static Web Apps (via SWA CLI)'
     steps:
     - checkout: self
 
-    - task: AzureCLI@2
-      displayName: 'Deploy to SWA via Azure CLI (PowerShell, clean install ext)'
+    # 1) ثبّت Node.js على الـ Agent
+    - task: NodeTool@0
+      displayName: 'Use Node.js 20.x'
       inputs:
-        azureSubscription: '$(serviceConnection)'
-        scriptType: 'ps'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          Write-Host "Azure CLI version:"; az version
+        versionSpec: '20.x'
 
-          $swaName = "Fabricam-Project-static-webapp"        # ← اسم SWA
-          $swaRg   = " Fabricam-Project-prod-rg"          # ← Resource Group
-          $srcPath = "$(System.DefaultWorkingDirectory)\APP"
-          $token   = "$(deployment_token)"
+    # 2) ثبّت SWA CLI (إصدار 2.x) عالميًا
+    - powershell: |
+        npm --version
+        npm install -g @azure/static-web-apps-cli@^2
+        swa --version
+      displayName: 'Install SWA CLI'
 
-          # 1) إزالة أي نسخة للإضافة (لو موجودة) لتفادي اللخبطة
-          try {
-            Write-Host "Removing 'staticwebapp' extension if present..."
-            az extension remove --name staticwebapp
-          } catch {
-            Write-Warning "Remove extension failed or not installed; continuing..."
-          }
-
-          # 2) تثبيت الإضافة من الصفر
-          Write-Host "Adding 'staticwebapp' extension cleanly..."
-          az extension add --name staticwebapp
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to add 'staticwebapp' extension."
-            exit 1
-          }
-
-          # 3) تحقّق أن الإضافة اتثبتت فعلاً
-          $extOk = $false
-          try {
-            $out = az extension list --output tsv --query "[?name=='staticwebapp'].name"
-            if ($out -match "staticwebapp") { $extOk = $true }
-          } catch {
-            $extOk = $false
-          }
-          if (-not $extOk) {
-            Write-Error "'staticwebapp' extension not loaded; cannot proceed."
-            exit 1
-          }
-
-          # 4) نشر محتوى مجلد APP
-          Write-Host "Uploading to SWA: $swaName in RG: $swaRg from: $srcPath"
-          az staticwebapp upload `
-            --name $swaName `
-            --resource-group $swaRg `
-            --source $srcPath `
-            --token $token
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "SWA upload failed."
-            exit 1
-          } else {
-            Write-Host "SWA upload completed successfully."
-          }
+    # 3) انشر فولدر APP باستخدام التوكن
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        $src = "$(System.DefaultWorkingDirectory)\APP"
+        Write-Host "Deploying from: $src"
+        swa deploy "$src" --env production --deployment-token "$(deployment_token)"
+      displayName: 'SWA Deploy (token)'
