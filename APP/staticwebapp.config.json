@@ -16,7 +16,7 @@
               "clientSecretSettingName": "AADB2C_CLIENT_SECRET"
             },
             "openIdConnectConfiguration": {
-              "wellKnownOpenIdConfiguration": "https://tamimcustomers.b2clogin.com/tamimcustomers.onmicrosoft.com/B2C_1_susi/v2.0/.well-known/openid-configuration"
+              "wellKnownOpenIdConfiguration": "https://tamimcustomers.ciamlogin.com/e89cfffb-6bfc-4fc5-966c-9237eab1fd1d/v2.0/.well-known/openid-configuration"
             }
           },
           "login": {
