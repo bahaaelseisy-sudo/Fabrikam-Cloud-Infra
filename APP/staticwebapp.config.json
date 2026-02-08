@@ -10,7 +10,12 @@
             },
             "openIdConnectConfiguration": {
               "wellKnownOpenIdConfiguration": "https://tamimcustomers.ciamlogin.com/e89cfffb-6bfc-4fc5-966c-9237eab1fd1d/v2.0/.well-known/openid-configuration?appid=91539a1d-69df-4087-a533-691b2a0763fe"
+              
             }
+          },
+          "login": {
+            "scopes": ["openid", "profile", "email"]
+            
           }
         }
       }
