@@ -2,8 +2,8 @@ resource "azurerm_static_site" "web_app" {
   name                = "${var.project}-static-webapp"
   resource_group_name = azurerm_resource_group.Prod_rg.name
   location            = "West Europe" # الـ Static Web App متاح في مناطق محددة (West Europe هي الأقرب لـ North Europe)
-  sku_tier            = "Standard"
-  sku_size            = "Standard"
+  sku_tier            = "Free"
+  sku_size            = "Free"
 }
 
 
