@@ -2,6 +2,21 @@
   "auth": {
     "identityProviders": {
       "customOpenIdConnectProviders": {
+        "employees": {
+          "registration": {
+            "clientIdSettingName": "AAD_CLIENT_ID",
+            "clientCredential": {
+              "clientSecretSettingName": "AAD_CLIENT_SECRET"
+            },
+            "openIdConnectConfiguration": {
+              "wellKnownOpenIdConfiguration": "https://login.microsoftonline.com/d7b3fbbf-00fd-43ab-a8e6-a3d37ac54a72/v2.0/.well-known/openid-configuration"
+            }
+          },
+          "login": {
+            "scopes": ["openid", "profile", "email"]
+          }
+        },
+
         "aadb2c": {
           "registration": {
             "clientIdSettingName": "AADB2C_CLIENT_ID",
@@ -10,12 +25,10 @@
             },
             "openIdConnectConfiguration": {
               "wellKnownOpenIdConfiguration": "https://tamimcustomers.ciamlogin.com/e89cfffb-6bfc-4fc5-966c-9237eab1fd1d/v2.0/.well-known/openid-configuration?appid=91539a1d-69df-4087-a533-691b2a0763fe"
-              
             }
           },
           "login": {
             "scopes": ["openid", "profile", "email"]
-            
           }
         }
       }
@@ -23,6 +36,11 @@
   },
 
   "routes": [
+    {
+      "route": "/login-employees",
+      "redirect": "/.auth/login/employees",
+      "statusCode": 302
+    },
     {
       "route": "/login-customers",
       "redirect": "/.auth/login/aadb2c",
@@ -33,5 +51,9 @@
       "redirect": "/.auth/logout",
       "statusCode": 302
     }
-  ]
+  ],
+
+  "navigationFallback": {
+    "rewrite": "/index.html"
+  }
 }
