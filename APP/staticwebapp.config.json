@@ -51,9 +51,7 @@
       "redirect": "/.auth/logout",
       "statusCode": 302
     }
-  ],
+  ]
 
-  "navigationFallback": {
-    "rewrite": "/index.html"
-  }
+ 
 }
