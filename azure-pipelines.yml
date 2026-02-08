@@ -27,6 +27,7 @@ stages:
 # --------- 1) Terraform Plan ----------
 - stage: Terraform_Plan
   displayName: 'Plan Stage'
+  condition: and(succeeded(), or(eq(variables['Build.Reason'], 'Manual'), contains(variables['Build.SourceVersionMessage'], '[infra]')))
   jobs:
   - job: Plan
     displayName: 'Terraform Plan'
@@ -101,8 +102,8 @@ stages:
 # --------- 3) Deploy Static Web App ----------
 - stage: SWA_Deploy
   displayName: 'Deploy Static Web App'
-  dependsOn: Terraform_Apply
-  condition: succeeded()
+  dependsOn: Terraform_Plan
+  condition: always()
   pool:
     name: 'Default'    # نفس الـ self-hosted agent
 
