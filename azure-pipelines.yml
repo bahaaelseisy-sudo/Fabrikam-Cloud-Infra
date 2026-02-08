@@ -1,6 +1,15 @@
 # ===== Starter pipeline (معدّل) =====
 trigger:
-- main
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - APP/* # اشتغل لو حصل تغيير في فولدر الكود
+      - azure-pipelines.yml # واشتغل لو غيرنا في ملف البايبلاين نفسه
+    exclude:
+      - Infrastructure/* # "اعمل نفسك ميت" لو التغيير في التيرافورم بس
+      - README.md
 
 pool:
   name: 'Default'  # Self-hosted agent (عندك)
