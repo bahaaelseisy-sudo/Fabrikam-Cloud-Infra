@@ -4,8 +4,8 @@
       "azureActiveDirectory": {
         "registration": {
           "openIdIssuer": "https://login.microsoftonline.com/d7b3fbbf-00fd-43ab-a8e6-a3d37ac54a72/v2.0",
-          "clientIdSettingName": "AAD_CLIENT_ID",
-          "clientSecretSettingName": "AAD_CLIENT_SECRET"
+          "clientIdSettingName": "AAD_CLIENT_I",
+          "clientSecretSettingName": "AAD_CLIENT_SECRE"
         }
       },
       "customOpenIdConnectProviders": {
