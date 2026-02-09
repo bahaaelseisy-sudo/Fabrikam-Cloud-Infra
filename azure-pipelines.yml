@@ -1,4 +1,4 @@
-# ===== Starter pipeline (معدّل) =====
+# ===== Starter pipeline (ETES Secured Edition) =====
 trigger:
   branches:
     include:
@@ -6,14 +6,14 @@ trigger:
   paths:
     include:
       - APP/*
-      - azure-pipelines.yml # عشان يشتغل لو عدلت في البايبلاين نفسه
-      - "*.tf"              # عشان يشتغل لو عدلت في أي ملف تيرافورم في الرووتفي ملف البايبلاين نفسه
+      - api/* # تعديل: عشان يحس بأي تغيير في كود الـ API
+      - azure-pipelines.yml 
+      - "*.tf"              
     exclude:
-      - Infrastructure/* # "اعمل نفسك ميت" لو التغيير في التيرافورم بس
-      - README.md
+      - Infrastructure/* - README.md
 
 pool:
-  name: 'Default'  # Self-hosted agent (عندك)
+  name: 'Default'  # Self-hosted agent
 
 variables:
   serviceConnection: 'Fabrikam-Manual-SP'
@@ -21,7 +21,7 @@ variables:
   storageAccount: 'fabtfstate2026'
   container: 'tfstate'
   tfstateKey: 'prod.terraform.tfstate'
-  # أضف متغير secret باسم deployment_token من UI
+  # ملاحظة: تأكد من وجود سر باسم deployment_token في الـ Library/Variables
 
 stages:
 
@@ -33,9 +33,8 @@ stages:
   - job: Plan
     displayName: 'Terraform Plan'
     steps:
-    # (A) init أولاً عشان backend يبقى مهيّأ قبل force-unlock
     - task: TerraformTaskV4@4
-      displayName: 'Terraform Init (pre-unlock)'
+      displayName: 'Terraform Init'
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -46,20 +45,6 @@ stages:
         backendAzureRmKey: '$(tfstateKey)'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-     
-    - task: TerraformTaskV4@4
-      displayName: 'Terraform Init (plan)'
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
-        backendServiceArm: '$(serviceConnection)'
-        backendAzureRmResourceGroupName: '$(storageRG)'
-        backendAzureRmStorageAccountName: '$(storageAccount)'
-        backendAzureRmContainerName: '$(container)'
-        backendAzureRmKey: '$(tfstateKey)'
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
-
-    # (D) Plan
     - task: TerraformTaskV4@4
       displayName: 'Terraform Plan'
       inputs:
@@ -78,7 +63,7 @@ stages:
     displayName: 'Terraform Apply'
     steps:
     - task: TerraformTaskV4@4
-      displayName: 'Terraform Init (apply)'
+      displayName: 'Terraform Init'
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -97,40 +82,38 @@ stages:
         environmentServiceNameAzureRM: '$(serviceConnection)'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-
-
-
 # --------- 3) Deploy Static Web App ----------
 - stage: SWA_Deploy
   displayName: 'Deploy Static Web App'
-  dependsOn: Terraform_Plan
-  condition: always()
+  dependsOn: Terraform_Apply # تعديل: يفضل يعتمد على الـ Apply لضمان وجود الـ Resources
+  condition: succeeded()
   pool:
-    name: 'Default'    # نفس الـ self-hosted agent
+    name: 'Default'
 
   jobs:
   - job: DeploySWA
-    displayName: 'Publish to Azure Static Web Apps (via SWA CLI)'
+    displayName: 'Publish to Azure Static Web Apps'
     steps:
     - checkout: self
 
-    # 1) ثبّت Node.js على الـ Agent
     - task: NodeTool@0
       displayName: 'Use Node.js 20.x'
       inputs:
         versionSpec: '20.x'
 
-    # 2) ثبّت SWA CLI (إصدار 2.x) عالميًا
     - powershell: |
-        npm --version
         npm install -g @azure/static-web-apps-cli@^2
-        swa --version
       displayName: 'Install SWA CLI'
 
-    # 3) انشر فولدر APP باستخدام التوكن
+    # الخطوة السحرية: ربط الـ App مع الـ API في الـ Deploy
     - powershell: |
         $ErrorActionPreference = 'Stop'
-        $src = "$(System.DefaultWorkingDirectory)\APP"
-        Write-Host "Deploying from: $src"
-        swa deploy "$src" --env production --deployment-token "$(deployment_token)"
-      displayName: 'SWA Deploy (token)'
+        $app_src = "$(System.DefaultWorkingDirectory)\APP"
+        $api_src = "$(System.DefaultWorkingDirectory)\api"
+        
+        Write-Host "Deploying App from: $app_src"
+        Write-Host "Deploying API from: $api_src"
+        
+        # أمر النشر مع تحديد مكان الـ API
+        swa deploy "$app_src" --api-location "$api_src" --env production --deployment-token "$(deployment_token)"
+      displayName: 'SWA Deploy (App + API)'
