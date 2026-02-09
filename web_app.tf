@@ -1,11 +1,10 @@
-resource "azurerm_static_site" "web_app" {
+resource "azurerm_static_web_app" "web_app" { # تم تغيير الاسم للجديد
   name                = "${var.project}-static-webapp"
   resource_group_name = azurerm_resource_group.Prod_rg.name
   location            = "West Europe"
   sku_tier            = "Standard"
   sku_size            = "Standard"
 
-  # التعديل 1: تفعيل الهوية المدارة
   identity {
     type = "SystemAssigned"
   }
@@ -19,8 +18,7 @@ resource "azurerm_sql_server" "web_DB_server" {
   administrator_login          = var.sql_admin
   administrator_login_password = var.sql_password
 
-  # التعديل 2: لازم يكون True عشان الـ Firewall Rule اللي تحت تشتغل
-  public_network_access_enabled = true 
+  # شيلنا السطر اللي كان عامل Error عشان الـ Provider قديم
 }
 
 resource "azurerm_sql_database" "App_DB" {
@@ -32,7 +30,7 @@ resource "azurerm_sql_database" "App_DB" {
   collation           = "SQL_Latin1_General_CP1_CI_AS"
 }
 
-# الجزء بتاعك (ملمستوش) - Private Endpoint
+# الـ Private Endpoint بتاعك زي ما هو
 resource "azurerm_private_endpoint" "Sql-ep" {
   name                = "${var.project}-sql-ep"
   resource_group_name = azurerm_resource_group.Prod_rg.name
@@ -47,7 +45,7 @@ resource "azurerm_private_endpoint" "Sql-ep" {
   }
 }
 
-# التعديل 3: "الخرم" الصغير في السور لخدمات أزور
+# قاعدة الـ Firewall اللي هتسمح للـ SWA بالدخول
 resource "azurerm_sql_firewall_rule" "allow_azure_services" {
   name                = "AllowAzureServices"
   resource_group_name = azurerm_resource_group.Prod_rg.name
