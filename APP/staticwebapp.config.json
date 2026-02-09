@@ -83,5 +83,11 @@
         "authenticated"
       ]
     }
-  ]
+  ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/login-customers",
+      "statusCode": 302
+    }
+  }
 }
