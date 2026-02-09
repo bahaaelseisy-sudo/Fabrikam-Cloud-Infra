@@ -16,7 +16,6 @@
             "scopes": ["openid", "profile", "email"]
           }
         },
-
         "aadb2c": {
           "registration": {
             "clientIdSettingName": "AADB2C_CLIENT_ID",
@@ -47,11 +46,22 @@
       "statusCode": 302
     },
     {
+      "route": "/employees/*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/customers/*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
       "route": "/logout",
       "redirect": "/.auth/logout",
       "statusCode": 302
+    },
+    {
+      "route": "/*",
+      "allowedRoles": ["anonymous", "authenticated"]
     }
   ]
-
- 
 }
+
