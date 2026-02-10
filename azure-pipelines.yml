@@ -20,61 +20,65 @@ variables:
   tfstateKey: 'prod.terraform.tfstate'
 
 stages:
-- stage: Terraform_Plan
-  displayName: 'Plan Stage'
-  jobs:
-  - job: Plan
-    steps:
-    - task: TerraformTaskV4@4
-      displayName: 'Terraform Init'
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
-        backendServiceArm: '$(serviceConnection)'
-        backendAzureRmResourceGroupName: '$(storageRG)'
-        backendAzureRmStorageAccountName: '$(storageAccount)'
-        backendAzureRmContainerName: '$(container)'
-        backendAzureRmKey: '$(tfstateKey)'
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-    - task: TerraformTaskV4@4
-      displayName: 'Terraform Plan'
-      inputs:
-        provider: 'azurerm'
-        command: 'plan'
-        environmentServiceNameAzureRM: '$(serviceConnection)'
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
+# --------- 1) Terraform Plan (DISABLED) ----------
+# - stage: Terraform_Plan
+#   displayName: 'Plan Stage'
+#   jobs:
+#   - job: Plan
+#     steps:
+#     - task: TerraformTaskV4@4
+#       displayName: 'Terraform Init'
+#       inputs:
+#         provider: 'azurerm'
+#         command: 'init'
+#         backendServiceArm: '$(serviceConnection)'
+#         backendAzureRmResourceGroupName: '$(storageRG)'
+#         backendAzureRmStorageAccountName: '$(storageAccount)'
+#         backendAzureRmContainerName: '$(container)'
+#         backendAzureRmKey: '$(tfstateKey)'
+#         workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-- stage: Terraform_Apply
-  displayName: 'Execution Stage'
-  dependsOn: Terraform_Plan
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  jobs:
-  - job: Apply
-    steps:
-    - task: TerraformTaskV4@4
-      displayName: 'Terraform Init'
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
-        backendServiceArm: '$(serviceConnection)'
-        backendAzureRmResourceGroupName: '$(storageRG)'
-        backendAzureRmStorageAccountName: '$(storageAccount)'
-        backendAzureRmContainerName: '$(container)'
-        backendAzureRmKey: '$(tfstateKey)'
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
+#     - task: TerraformTaskV4@4
+#       displayName: 'Terraform Plan'
+#       inputs:
+#         provider: 'azurerm'
+#         command: 'plan'
+#         environmentServiceNameAzureRM: '$(serviceConnection)'
+#         workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-    - task: TerraformTaskV4@4
-      displayName: 'Terraform Apply'
-      inputs:
-        provider: 'azurerm'
-        command: 'apply'
-        environmentServiceNameAzureRM: '$(serviceConnection)'
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
+# --------- 2) Terraform Apply (DISABLED) ----------
+# - stage: Terraform_Apply
+#   displayName: 'Execution Stage'
+#   dependsOn: Terraform_Plan
+#   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+#   jobs:
+#   - job: Apply
+#     steps:
+#     - task: TerraformTaskV4@4
+#       displayName: 'Terraform Init'
+#       inputs:
+#         provider: 'azurerm'
+#         command: 'init'
+#         backendServiceArm: '$(serviceConnection)'
+#         backendAzureRmResourceGroupName: '$(storageRG)'
+#         backendAzureRmStorageAccountName: '$(storageAccount)'
+#         backendAzureRmContainerName: '$(container)'
+#         backendAzureRmKey: '$(tfstateKey)'
+#         workingDirectory: '$(System.DefaultWorkingDirectory)'
 
+#     - task: TerraformTaskV4@4
+#       displayName: 'Terraform Apply'
+#       inputs:
+#         provider: 'azurerm'
+#         command: 'apply'
+#         environmentServiceNameAzureRM: '$(serviceConnection)'
+#         workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+# --------- 3) Deploy Static Web App (ACTIVE) ----------
 - stage: SWA_Deploy
   displayName: 'Deploy Stage'
-  dependsOn: Terraform_Apply
+  # تم إلغاء dependsOn لأن مراحل التيرافورم معطلة
   condition: succeeded()
   jobs:
   - job: DeploySWA
@@ -84,14 +88,11 @@ stages:
       inputs:
         versionSpec: '20.x'
     - powershell: |
-        # تنظيف أي كاش قديم للـ CLI
         npm install -g @azure/static-web-apps-cli@latest
+        $app_src = "APP"
+        $api_src = "api"
         
-        $app_src = "$(System.DefaultWorkingDirectory)\APP"
-        $api_src = "$(System.DefaultWorkingDirectory)\api"
+        Write-Host "Deploying files from $app_src and API from $api_src..."
         
-        Write-Host "Deploying from: $app_src"
-        
-        # أمر الرفع السادة من غير أي Flags زيادة عشان ما يزعلش
         swa deploy "$app_src" --api-location "$api_src" --env production --deployment-token "$(deployment_token)"
-      displayName: 'SWA Deploy (Clean Run)'
+      displayName: 'SWA Deploy (App + API Only)'
