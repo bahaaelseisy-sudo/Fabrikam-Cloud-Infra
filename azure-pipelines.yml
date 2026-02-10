@@ -1,4 +1,3 @@
-# ===== Starter pipeline (ETES Secured Edition) =====
 trigger:
   branches:
     include:
@@ -6,14 +5,12 @@ trigger:
   paths:
     include:
       - APP/*
-      - api/* # تعديل: عشان يحس بأي تغيير في كود الـ API
-      - azure-pipelines.yml 
-      - "*.tf"              
-    exclude:
-      - Infrastructure/* - README.md
+      - api/*
+      - azure-pipelines.yml
+      - "*.tf"
 
 pool:
-  name: 'Default'  # Self-hosted agent
+  name: 'Default'
 
 variables:
   serviceConnection: 'Fabrikam-Manual-SP'
@@ -21,17 +18,12 @@ variables:
   storageAccount: 'fabtfstate2026'
   container: 'tfstate'
   tfstateKey: 'prod.terraform.tfstate'
-  # ملاحظة: تأكد من وجود سر باسم deployment_token في الـ Library/Variables
 
 stages:
-
-# --------- 1) Terraform Plan ----------
 - stage: Terraform_Plan
   displayName: 'Plan Stage'
-  condition: and(succeeded(), or(eq(variables['Build.Reason'], 'Manual'), contains(variables['Build.SourceVersionMessage'], '[infra]')))
   jobs:
   - job: Plan
-    displayName: 'Terraform Plan'
     steps:
     - task: TerraformTaskV4@4
       displayName: 'Terraform Init'
@@ -44,7 +36,6 @@ stages:
         backendAzureRmContainerName: '$(container)'
         backendAzureRmKey: '$(tfstateKey)'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
-   
 
     - task: TerraformTaskV4@4
       displayName: 'Terraform Plan'
@@ -54,14 +45,12 @@ stages:
         environmentServiceNameAzureRM: '$(serviceConnection)'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-# --------- 2) Terraform Apply ----------
 - stage: Terraform_Apply
   displayName: 'Execution Stage'
   dependsOn: Terraform_Plan
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
   - job: Apply
-    displayName: 'Terraform Apply'
     steps:
     - task: TerraformTaskV4@4
       displayName: 'Terraform Init'
@@ -83,38 +72,24 @@ stages:
         environmentServiceNameAzureRM: '$(serviceConnection)'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-# --------- 3) Deploy Static Web App ----------
 - stage: SWA_Deploy
-  displayName: 'Deploy Static Web App'
-  dependsOn: Terraform_Apply # تعديل: يفضل يعتمد على الـ Apply لضمان وجود الـ Resources
+  displayName: 'Deploy Stage'
+  dependsOn: Terraform_Apply
   condition: succeeded()
-  pool:
-    name: 'Default'
-
   jobs:
   - job: DeploySWA
-    displayName: 'Publish to Azure Static Web Apps'
     steps:
     - checkout: self
-
     - task: NodeTool@0
-      displayName: 'Use Node.js 20.x'
       inputs:
         versionSpec: '20.x'
-
     - powershell: |
         npm install -g @azure/static-web-apps-cli@^2
-      displayName: 'Install SWA CLI'
-
-    # الخطوة السحرية: ربط الـ App مع الـ API في الـ Deploy
-    - powershell: |
-        $ErrorActionPreference = 'Stop'
         $app_src = "$(System.DefaultWorkingDirectory)\APP"
         $api_src = "$(System.DefaultWorkingDirectory)\api"
         
-        Write-Host "Deploying App from: $app_src"
-        Write-Host "Deploying API from: $api_src"
+        # ربط المتغيرات بالأسماء المطابقة تماماً لملف الـ JSON
+        $settings = '{"AAD_CLIENT_ID":"$(AAD_CLIENT_ID)","AAD_CLIENT_SECRET":"$(AAD_CLIENT_SECRET)","AADB2C_CLIENT_ID":"$(AADB2C_CLIENT_ID)","AADB2C_CLIENT_SECRET":"$(AADB2C_CLIENT_SECRET)"}'
         
-        # أمر النشر مع تحديد مكان الـ API
-        swa deploy "$app_src" --api-location "$api_src" --env production --deployment-token "$(deployment_token)"
-      displayName: 'SWA Deploy (App + API)'
+        swa deploy "$app_src" --api-location "$api_src" --env production --deployment-token "$(deployment_token)" --app-settings "$settings"
+      displayName: 'SWA Deploy (App + API + Matched Settings)'

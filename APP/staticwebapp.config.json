@@ -1,19 +1,14 @@
-
-
-
-
-
 {
-   "forwardingGateway": {
-      "requiredHeader": "X-Forwarded-Host",
-      "allowedForwardedHosts": [
-        "tamimelseisy.com",
-        "www.tamimelseisy.com"
-      ]
+  "forwardingGateway": {
+    "requiredHeaders": {
+      "X-Forwarded-Host": "tamimelseisy.com"
     },
-  
-"auth": {
-   
+    "allowedForwardedHosts": [
+      "tamimelseisy.com",
+      "www.tamimelseisy.com"
+    ]
+  },
+  "auth": {
     "identityProviders": {
       "customOpenIdConnectProviders": {
         "employees": {
@@ -27,11 +22,7 @@
             }
           },
           "login": {
-            "scopes": [
-              "openid",
-              "profile",
-              "email"
-            ]
+            "scopes": ["openid", "profile", "email"]
           }
         },
         "aadb2c": {
@@ -45,11 +36,7 @@
             }
           },
           "login": {
-            "scopes": [
-              "openid",
-              "profile",
-              "email"
-            ]
+            "scopes": ["openid", "profile", "email"]
           }
         }
       }
@@ -68,15 +55,11 @@
     },
     {
       "route": "/employees/*",
-      "allowedRoles": [
-        "authenticated"
-      ]
+      "allowedRoles": ["authenticated"]
     },
     {
       "route": "/customers/*",
-      "allowedRoles": [
-        "authenticated"
-      ]
+      "allowedRoles": ["authenticated"]
     },
     {
       "route": "/logout",
@@ -85,10 +68,7 @@
     },
     {
       "route": "/*",
-      "allowedRoles": [
-        "anonymous",
-        "authenticated"
-      ]
+      "allowedRoles": ["anonymous", "authenticated"]
     }
   ],
   "responseOverrides": {
