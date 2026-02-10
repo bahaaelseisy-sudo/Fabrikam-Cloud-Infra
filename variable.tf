@@ -70,10 +70,6 @@ variable "DB_Subnet" {
 
 # --- المتغيرات اللي كان فيها مشكلة في الساينتكس ---
 
-variable "cert_password" {
-  type      = string
-  sensitive = true
-}
 
 variable "aad_client_id" {
   type      = string
