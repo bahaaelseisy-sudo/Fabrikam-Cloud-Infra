@@ -83,7 +83,7 @@ resource "azurerm_subnet" "on-prem-resources" {
 }
 
 resource "azurerm_subnet" "appgw_subnet" {
-  name                 = "AppGatewaySubnet"
+  name                 = "AppGatewaySubnet-v2" # غيرنا الاسم هنا
   resource_group_name  = azurerm_resource_group.hub_rg.name
   virtual_network_name = azurerm_virtual_network.hub_vnet.name
   address_prefixes     = var.AppGW_Subnet_Prefix
