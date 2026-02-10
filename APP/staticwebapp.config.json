@@ -1,12 +1,19 @@
+
+
+
+
+
 {
-  "auth": {
-    "forwardingGateway": {
+   "forwardingGateway": {
       "requiredHeader": "X-Forwarded-Host",
       "allowedForwardedHosts": [
         "tamimelseisy.com",
         "www.tamimelseisy.com"
       ]
     },
+  
+  "auth": {
+   
     "identityProviders": {
       "customOpenIdConnectProviders": {
         "employees": {
