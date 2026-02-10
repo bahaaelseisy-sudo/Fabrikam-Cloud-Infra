@@ -21,64 +21,64 @@ variables:
 
 stages:
 
-# --------- 1) Terraform Plan (DISABLED) ----------
-# - stage: Terraform_Plan
-#   displayName: 'Plan Stage'
-#   jobs:
-#   - job: Plan
-#     steps:
-#     - task: TerraformTaskV4@4
-#       displayName: 'Terraform Init'
-#       inputs:
-#         provider: 'azurerm'
-#         command: 'init'
-#         backendServiceArm: '$(serviceConnection)'
-#         backendAzureRmResourceGroupName: '$(storageRG)'
-#         backendAzureRmStorageAccountName: '$(storageAccount)'
-#         backendAzureRmContainerName: '$(container)'
-#         backendAzureRmKey: '$(tfstateKey)'
-#         workingDirectory: '$(System.DefaultWorkingDirectory)'
+# --------- 1) Terraform Plan (ACTIVE) ----------
+- stage: Terraform_Plan
+  displayName: 'Plan Stage'
+  jobs:
+  - job: Plan
+    steps:
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Init'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: '$(serviceConnection)'
+        backendAzureRmResourceGroupName: '$(storageRG)'
+        backendAzureRmStorageAccountName: '$(storageAccount)'
+        backendAzureRmContainerName: '$(container)'
+        backendAzureRmKey: '$(tfstateKey)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-#     - task: TerraformTaskV4@4
-#       displayName: 'Terraform Plan'
-#       inputs:
-#         provider: 'azurerm'
-#         command: 'plan'
-#         environmentServiceNameAzureRM: '$(serviceConnection)'
-#         workingDirectory: '$(System.DefaultWorkingDirectory)'
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Plan'
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        environmentServiceNameAzureRM: '$(serviceConnection)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-# --------- 2) Terraform Apply (DISABLED) ----------
-# - stage: Terraform_Apply
-#   displayName: 'Execution Stage'
-#   dependsOn: Terraform_Plan
-#   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-#   jobs:
-#   - job: Apply
-#     steps:
-#     - task: TerraformTaskV4@4
-#       displayName: 'Terraform Init'
-#       inputs:
-#         provider: 'azurerm'
-#         command: 'init'
-#         backendServiceArm: '$(serviceConnection)'
-#         backendAzureRmResourceGroupName: '$(storageRG)'
-#         backendAzureRmStorageAccountName: '$(storageAccount)'
-#         backendAzureRmContainerName: '$(container)'
-#         backendAzureRmKey: '$(tfstateKey)'
-#         workingDirectory: '$(System.DefaultWorkingDirectory)'
+# --------- 2) Terraform Apply (ACTIVE) ----------
+- stage: Terraform_Apply
+  displayName: 'Execution Stage'
+  dependsOn: Terraform_Plan
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - job: Apply
+    steps:
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Init'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: '$(serviceConnection)'
+        backendAzureRmResourceGroupName: '$(storageRG)'
+        backendAzureRmStorageAccountName: '$(storageAccount)'
+        backendAzureRmContainerName: '$(container)'
+        backendAzureRmKey: '$(tfstateKey)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-#     - task: TerraformTaskV4@4
-#       displayName: 'Terraform Apply'
-#       inputs:
-#         provider: 'azurerm'
-#         command: 'apply'
-#         environmentServiceNameAzureRM: '$(serviceConnection)'
-#         workingDirectory: '$(System.DefaultWorkingDirectory)'
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Apply'
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        environmentServiceNameAzureRM: '$(serviceConnection)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
 
 # --------- 3) Deploy Static Web App (ACTIVE) ----------
 - stage: SWA_Deploy
   displayName: 'Deploy Stage'
-  # تم إلغاء dependsOn لأن مراحل التيرافورم معطلة
+  dependsOn: Terraform_Apply # ربطناها بالتيرافورم عشان ما ترفعش إلا لما الأرضية تجهز
   condition: succeeded()
   jobs:
   - job: DeploySWA
@@ -89,13 +89,10 @@ stages:
         versionSpec: '20.x'
     - powershell: |
         npm install -g @azure/static-web-apps-cli@latest
-        
         $app_path = "APP"
         $api_path = "api"
         $token = "$(deployment_token)"
         
         Write-Host "Deploying directly to PRODUCTION..."
-        
-        # التعديل الجوهري: إضافة --env production مع المتغير المظبوط
         swa deploy "$app_path" --api-location "$api_path" --env production --deployment-token $token
       displayName: 'SWA Deploy (Final Production Fix)'
