@@ -85,7 +85,7 @@ stages:
       name: GetSWAToken
       inputs:
         azureSubscription: '$(serviceConnection)'
-        scriptType: 'pscore'
+        scriptType: 'ps'
         scriptLocation: 'inlineScript'
         inlineScript: |
           $token = az staticwebapp secrets list --name "Fabricam-Project-static-webapp" --query "properties.apiKey" -o tsv
