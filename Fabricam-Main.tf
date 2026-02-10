@@ -81,3 +81,10 @@ resource "azurerm_subnet" "on-prem-resources" {
   name = "on-prem-resources"
   address_prefixes = ["10.3.0.0/24"]
 }
+
+resource "azurerm_subnet" "appgw_subnet" {
+  name                 = "AppGatewaySubnet"
+  resource_group_name  = azurerm_resource_group.hub_rg.name
+  virtual_network_name = azurerm_virtual_network.hub_vnet.name
+  address_prefixes     = var.AppGW_Subnet_Prefix
+}

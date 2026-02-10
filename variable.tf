@@ -88,3 +88,7 @@ variable "aadb2c_client_secret" {
   type      = string
   sensitive = true
 }
+variable "AppGW_Subnet_Prefix" {
+  type    = list(string)
+  default = ["10.0.2.0/24"] # مساحة جديدة في الـ Hub بعيد عن الـ Firewall
+}

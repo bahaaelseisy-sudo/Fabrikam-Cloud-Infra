@@ -53,7 +53,8 @@ resource "azurerm_application_gateway" "main_gateway" {
 
   gateway_ip_configuration {
     name      = "appgw-ip-config"
-    subnet_id = azurerm_subnet.App_subnet.id
+    # التعديل هنا: نربط بالسابنت المخصصة اللي عملناها فوق
+    subnet_id = azurerm_subnet.appgw_subnet.id 
   }
 
   frontend_port {
