@@ -13,6 +13,14 @@ resource "azurerm_static_web_app" "web_app" {
     "AADB2C_CLIENT_SECRET"  = var.aadb2c_client_secret
   }
 }
+# إنشاء الـ Public IP اللي الجيت واي محتاجه
+resource "azurerm_public_ip" "appgw_ip" {
+  name                = "appgw-public-ip"
+  resource_group_name = azurerm_resource_group.hub_rg.name
+  location            = azurerm_resource_group.hub_rg.location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
 
 # كود الـ Application Gateway مع الشهادة
 resource "azurerm_application_gateway" "main_gateway" {
