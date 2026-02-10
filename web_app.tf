@@ -1,55 +1,79 @@
-resource "azurerm_static_web_app" "web_app" { # تم تغيير الاسم للجديد
+resource "azurerm_static_web_app" "web_app" {
   name                = "${var.project}-static-webapp"
   resource_group_name = azurerm_resource_group.Prod_rg.name
   location            = "West Europe"
   sku_tier            = "Standard"
   sku_size            = "Standard"
 
-  identity {
-    type = "SystemAssigned"
+  # هنا بنربط الخانات بالمتغيرات عشان GitHub ما يزعلش
+  app_settings = {
+    "AAD_CLIENT_ID"         = var.aad_client_id
+    "AAD_CLIENT_SECRET"     = var.aad_client_secret
+    "AADB2C_CLIENT_ID"      = var.aadb2c_client_id
+    "AADB2C_CLIENT_SECRET"  = var.aadb2c_client_secret
   }
 }
 
-resource "azurerm_sql_server" "web_DB_server" {
-  name                         = "sqlserver500"
-  resource_group_name          = azurerm_resource_group.Prod_rg.name
-  location                     = azurerm_resource_group.Prod_rg.location
-  version                      = "12.0"
-  administrator_login          = var.sql_admin
-  administrator_login_password = var.sql_password
+# كود الـ Application Gateway مع الشهادة
+resource "azurerm_application_gateway" "main_gateway" {
+  name                = "${var.project}-appgw"
+  resource_group_name = azurerm_resource_group.hub_rg.name
+  location            = azurerm_resource_group.hub_rg.location
 
-  # شيلنا السطر اللي كان عامل Error عشان الـ Provider قديم
-}
-
-resource "azurerm_sql_database" "App_DB" {
-  name                = "${var.project}-db"
-  resource_group_name = azurerm_resource_group.Prod_rg.name
-  location            = azurerm_resource_group.Prod_rg.location
-  server_name         = azurerm_sql_server.web_DB_server.name
-  edition             = "Basic"
-  collation           = "SQL_Latin1_General_CP1_CI_AS"
-}
-
-# الـ Private Endpoint بتاعك زي ما هو
-resource "azurerm_private_endpoint" "Sql-ep" {
-  name                = "${var.project}-sql-ep"
-  resource_group_name = azurerm_resource_group.Prod_rg.name
-  location            = azurerm_resource_group.Prod_rg.location
-  subnet_id           = azurerm_subnet.DB_subnet.id
-
-  private_service_connection {
-    name                           = "${var.project}-sql-privlink"
-    private_connection_resource_id = azurerm_sql_server.web_DB_server.id
-    is_manual_connection           = false
-    subresource_names              = ["sqlServer"]
+  sku {
+    name     = "WAF_v2"
+    tier     = "WAF_v2"
+    capacity = 2
   }
-}
 
-# قاعدة الـ Firewall اللي هتسمح للـ SWA بالدخول
-resource "azurerm_sql_firewall_rule" "allow_azure_services" {
-  name                = "AllowAzureServices"
-  resource_group_name = azurerm_resource_group.Prod_rg.name
-  server_name         = azurerm_sql_server.web_DB_server.name
-  start_ip_address    = "0.0.0.0"
-  end_ip_address      = "0.0.0.0"
+  gateway_ip_configuration {
+    name      = "appgw-ip-config"
+    subnet_id = azurerm_subnet.App_subnet.id
+  }
+
+  frontend_port {
+    name = "https_port"
+    port = 443
+  }
+
+  frontend_ip_configuration {
+    name                 = "frontend_ip_config"
+    public_ip_address_id = azurerm_public_ip.appgw_ip.id
+  }
+
+  ssl_certificate {
+    name     = "tamim-cert"
+    data     = filebase64("tamim-cert.pfx")
+    password = var.cert_password
+  }
+
+  backend_address_pool {
+    name  = "swa_backend"
+    fqdns = [azurerm_static_web_app.web_app.default_host_name]
+  }
+
+  backend_http_settings {
+    name                                = "swa_http_settings"
+    cookie_based_affinity               = "Disabled"
+    port                                = 443
+    protocol                            = "Https"
+    pick_host_name_from_backend_address = true
+  }
+
+  http_listener {
+    name                           = "https_listener"
+    frontend_ip_configuration_name = "frontend_ip_config"
+    frontend_port_name             = "https_port"
+    protocol                       = "Https"
+    ssl_certificate_name           = "tamim-cert"
+  }
+
+  request_routing_rule {
+    name                       = "swa_rule"
+    rule_type                  = "Basic"
+    http_listener_name         = "https_listener"
+    backend_address_pool_name  = "swa_backend"
+    backend_http_settings_name = "swa_http_settings"
+    priority                   = 100
+  }
 }
