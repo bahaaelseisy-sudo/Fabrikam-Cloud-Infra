@@ -90,13 +90,12 @@ stages:
     - powershell: |
         npm install -g @azure/static-web-apps-cli@latest
         
-        # التأكد من المسارات الصحيحة داخل الوكيل
-        $app_path = "$(System.DefaultWorkingDirectory)/APP"
-        $api_path = "$(System.DefaultWorkingDirectory)/api"
+        # التأكد إننا بنرفع المجلدات اللي في جذر المشروع
+        $app_path = "APP"
+        $api_path = "api"
         
-        Write-Host "Checking if index.html exists in: $app_path"
-        if (Test-Path "$app_path/index.html") { Write-Host "Found index.html!" } else { Write-Error "index.html NOT found in $app_path" }
-
-        # أمر الرفع باستخدام المسارات الكاملة لضمان وصول الملفات
+        Write-Host "Starting Deployment using D:\ for temp files..."
+        
+        # أمر الرفع
         swa deploy "$app_path" --api-location "$api_path" --env production --deployment-token "$(deployment_token)"
-      displayName: 'SWA Deploy (Verify & Upload)'
+      displayName: 'SWA Deploy (Redirected to D)'
