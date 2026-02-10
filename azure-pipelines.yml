@@ -90,12 +90,13 @@ stages:
     - powershell: |
         npm install -g @azure/static-web-apps-cli@latest
         
-        # التأكد إننا بنرفع المجلدات اللي في جذر المشروع
         $app_path = "APP"
         $api_path = "api"
+        # تعريف التوكن كمتغير نصي واضح
+        $token = "$(deployment_token)"
         
-        Write-Host "Starting Deployment using D:\ for temp files..."
+        Write-Host "Starting Deployment..."
         
-        # أمر الرفع
-        swa deploy "$app_path" --api-location "$api_path" --deployment-token "$(deployment_token)"
-      displayName: 'SWA Deploy (Redirected to D)'
+        # تنفيذ الأمر باستخدام المتغير
+        swa deploy "$app_path" --api-location "$api_path" --deployment-token $token
+      displayName: 'SWA Deploy (Fixed Variable)'
