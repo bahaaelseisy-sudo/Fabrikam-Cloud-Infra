@@ -50,6 +50,10 @@ resource "azurerm_application_gateway" "main_gateway" {
     tier     = "WAF_v2"
     capacity = 2
   }
+  ssl_policy {
+    policy_type = "Predefined"
+    policy_name = "AppGwSslPolicy20220101" # دي أحدث وأقوى سياسة أمان في أزور حالياً
+  }
 
   gateway_ip_configuration {
     name      = "appgw-ip-config"
