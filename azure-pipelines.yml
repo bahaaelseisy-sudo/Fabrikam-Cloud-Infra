@@ -97,5 +97,5 @@ stages:
         Write-Host "Starting Deployment using D:\ for temp files..."
         
         # أمر الرفع
-        swa deploy "$app_path" --api-location "$api_path" --env production --deployment-token "$(deployment_token)"
+        swa deploy "$app_path" --api-location "$api_path" --deployment-token "$(deployment_token)"
       displayName: 'SWA Deploy (Redirected to D)'
