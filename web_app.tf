@@ -21,13 +21,30 @@ resource "azurerm_public_ip" "appgw_ip" {
   allocation_method   = "Static"
   sku                 = "Standard"
 }
+# 1. إنشاء الـ WAF Policy (عشان أزور ترضى تعمل Create)
+resource "azurerm_web_application_firewall_policy" "waf_policy" {
+  name                = "${var.project}-waf-policy"
+  resource_group_name = azurerm_resource_group.hub_rg.name
+  location            = azurerm_resource_group.hub_rg.location
 
+  policy_settings {
+    enabled       = true
+    mode          = "Prevention" # بيمنع الهجمات مش بس بيراقبها
+  }
+
+  managed_rules {
+    managed_rule_set {
+      type    = "OWASP"
+      version = "3.2"
+    }
+  }
+}
 # كود الـ Application Gateway مع الشهادة
 resource "azurerm_application_gateway" "main_gateway" {
   name                = "${var.project}-appgw"
   resource_group_name = azurerm_resource_group.hub_rg.name
   location            = azurerm_resource_group.hub_rg.location
-
+  firewall_policy_id = azurerm_web_application_firewall_policy.waf_policy.id
   sku {
     name     = "WAF_v2"
     tier     = "WAF_v2"
