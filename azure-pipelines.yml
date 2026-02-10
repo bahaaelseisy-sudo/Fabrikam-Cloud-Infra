@@ -44,11 +44,7 @@ stages:
         backendAzureRmContainerName: '$(container)'
         backendAzureRmKey: '$(tfstateKey)'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
-    - powershell: |
-        terraform import azurerm_static_site.web_app /subscriptions/30d80e3c-9c7b-490c-aaba-8a022a405d1e/resourceGroups/Fabricam-Project-prod-rg/providers/Microsoft.Web/staticSites/Fabricam-Project-static-webapp
-      displayName: 'Fix State Link'
-      continueOnError: true # مهمة عشان لو اتربط قبل كدة ميعطلش البايبلاين
-      workingDirectory: '$(System.DefaultWorkingDirectory)'
+   
 
     - task: TerraformTaskV4@4
       displayName: 'Terraform Plan'
