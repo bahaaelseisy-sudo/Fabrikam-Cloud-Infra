@@ -18,17 +18,18 @@ variables:
   storageAccount: 'fabtfstate2026'
   container: 'tfstate'
   tfstateKey: 'prod.terraform.tfstate'
+  # ملاحظة: شيلناdeployment_token من هنا لأنه هيتسحب أوتوماتيك
 
 stages:
 
-# --------- 1) Terraform Plan (ACTIVE) ----------
+# --------- 1) Terraform Plan ----------
 - stage: Terraform_Plan
   displayName: 'Plan Stage'
   jobs:
   - job: Plan
     steps:
     - task: TerraformTaskV4@4
-      displayName: 'Terraform Init'
+      displayName: 'Init'
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -40,14 +41,16 @@ stages:
         workingDirectory: '$(System.DefaultWorkingDirectory)'
 
     - task: TerraformTaskV4@4
-      displayName: 'Terraform Plan'
+      displayName: 'Plan'
       inputs:
         provider: 'azurerm'
         command: 'plan'
         environmentServiceNameAzureRM: '$(serviceConnection)'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
+        # السطر ده بيمنع الـ "Stack" وبيبعت المتغيرات فوراً
+        commandOptions: '-var="aad_client_id=$(TF_VAR_aad_client_id)" -var="aad_client_secret=$(TF_VAR_aad_client_secret)" -var="aadb2c_client_id=$(TF_VAR_aadb2c_client_id)" -var="aadb2c_client_secret=$(TF_VAR_aadb2c_client_secret)" -var="cert_password=$(TF_VAR_cert_password)" -var="sql_password=$(TF_VAR_sql_password)"'
 
-# --------- 2) Terraform Apply (ACTIVE) ----------
+# --------- 2) Terraform Apply & Get Token ----------
 - stage: Terraform_Apply
   displayName: 'Execution Stage'
   dependsOn: Terraform_Plan
@@ -56,7 +59,7 @@ stages:
   - job: Apply
     steps:
     - task: TerraformTaskV4@4
-      displayName: 'Terraform Init'
+      displayName: 'Init'
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -68,17 +71,33 @@ stages:
         workingDirectory: '$(System.DefaultWorkingDirectory)'
 
     - task: TerraformTaskV4@4
-      displayName: 'Terraform Apply'
+      displayName: 'Apply'
       inputs:
         provider: 'azurerm'
         command: 'apply'
         environmentServiceNameAzureRM: '$(serviceConnection)'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
+        commandOptions: '-auto-approve -var="aad_client_id=$(TF_VAR_aad_client_id)" -var="aad_client_secret=$(TF_VAR_aad_client_secret)" -var="aadb2c_client_id=$(TF_VAR_aadb2c_client_id)" -var="aadb2c_client_secret=$(TF_VAR_aadb2c_client_secret)" -var="cert_password=$(TF_VAR_cert_password)" -var="sql_password=$(TF_VAR_sql_password)"'
 
-# --------- 3) Deploy Static Web App (ACTIVE) ----------
+    # حركة النضافة: سحب التوكن أوتوماتيك وحفظه للمرحلة الجاية
+    - task: AzureCLI@2
+      displayName: 'Fetch SWA Token'
+      name: GetSWAToken
+      inputs:
+        azureSubscription: '$(serviceConnection)'
+        scriptType: 'pscore'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          $token = az staticwebapp secrets list --name "Fabricam-Project-static-webapp" --query "properties.apiKey" -o tsv
+          Write-Host "##vso[task.setvariable variable=DYNAMIC_SWA_TOKEN;isOutput=true]$token"
+
+# --------- 3) Deploy Static Web App ----------
 - stage: SWA_Deploy
   displayName: 'Deploy Stage'
-  dependsOn: Terraform_Apply # ربطناها بالتيرافورم عشان ما ترفعش إلا لما الأرضية تجهز
+  dependsOn: Terraform_Apply
+  variables:
+    # بنسحب التوكن اللي جبناه في المرحلة اللي فاتت
+    extractedToken: $[ stageDependencies.Terraform_Apply.Apply.outputs['GetSWAToken.DYNAMIC_SWA_TOKEN'] ]
   condition: succeeded()
   jobs:
   - job: DeploySWA
@@ -91,8 +110,7 @@ stages:
         npm install -g @azure/static-web-apps-cli@latest
         $app_path = "APP"
         $api_path = "api"
-        $token = "$(deployment_token)"
         
-        Write-Host "Deploying directly to PRODUCTION..."
-        swa deploy "$app_path" --api-location "$api_path" --env production --deployment-token $token
-      displayName: 'SWA Deploy (Final Production Fix)'
+        # بنستخدم التوكن الديناميكي اللي سحبناه
+        swa deploy "$app_path" --api-location "$api_path" --env production --deployment-token $(extractedToken)
+      displayName: 'SWA Deploy (Auto-Token)'
