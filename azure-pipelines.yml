@@ -92,11 +92,10 @@ stages:
         
         $app_path = "APP"
         $api_path = "api"
-        # تعريف التوكن كمتغير نصي واضح
         $token = "$(deployment_token)"
         
-        Write-Host "Starting Deployment..."
+        Write-Host "Deploying directly to PRODUCTION..."
         
-        # تنفيذ الأمر باستخدام المتغير
-        swa deploy "$app_path" --api-location "$api_path" --deployment-token $token
-      displayName: 'SWA Deploy (Fixed Variable)'
+        # التعديل الجوهري: إضافة --env production مع المتغير المظبوط
+        swa deploy "$app_path" --api-location "$api_path" --env production --deployment-token $token
+      displayName: 'SWA Deploy (Final Production Fix)'
